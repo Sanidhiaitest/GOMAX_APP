@@ -23,6 +23,8 @@ export type RootStackParamList = {
   Kyc: undefined;
   SpinWheel: undefined;
   Referral: undefined;
+  ScratchCards: undefined;
+  Challenges: undefined;
 };
 
 declare global {

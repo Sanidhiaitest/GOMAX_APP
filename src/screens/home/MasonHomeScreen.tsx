@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -23,10 +23,11 @@ export function MasonHomeScreen() {
   const navigation = useNavigation<Nav>();
   const { fullName, points, runs, loyaltyTier, kycStatus, scanHistory } = useApp();
 
-  const onQuickAction = (key: string, label: string) => {
+  const onQuickAction = (key: string) => {
     if (key === 'spin') return navigation.navigate('SpinWheel');
     if (key === 'refer') return navigation.navigate('Referral');
-    Alert.alert(label, 'Coming soon — next up after Spin Wheel and Refer & Earn.');
+    if (key === 'scratch') return navigation.navigate('ScratchCards');
+    if (key === 'challenges') return navigation.navigate('Challenges');
   };
 
   return (
@@ -73,7 +74,7 @@ export function MasonHomeScreen() {
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <View style={styles.grid}>
           {QUICK_ACTIONS.map((action) => (
-            <Pressable key={action.key} style={styles.gridItem} onPress={() => onQuickAction(action.key, action.label)}>
+            <Pressable key={action.key} style={styles.gridItem} onPress={() => onQuickAction(action.key)}>
               <Ionicons name={action.icon} size={22} color={colors.navy700} />
               <Text style={styles.gridLabel}>{action.label}</Text>
             </Pressable>
