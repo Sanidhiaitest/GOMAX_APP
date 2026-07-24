@@ -32,7 +32,13 @@ export function OrderDetailScreen({ navigation, route }: Props) {
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>{order.orderNo}</Text>
@@ -106,7 +112,7 @@ const styles = StyleSheet.create({
   timelineDotDone: { backgroundColor: colors.success },
   timelineLine: { width: 2, flex: 1, backgroundColor: colors.neutral200, marginVertical: 2 },
   timelineLineDone: { backgroundColor: colors.success },
-  timelineLabel: { ...m3Type.labelLarge, color: colors.neutral400, marginTop: 3 },
+  timelineLabel: { ...m3Type.labelLarge, color: colors.neutral500, marginTop: 3 },
   timelineLabelDone: { color: colors.textPrimary, fontWeight: '600' },
   itemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   itemName: { ...m3Type.titleMedium, fontSize: 14, color: colors.textPrimary },

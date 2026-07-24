@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
   },
   notifTitle: { ...typography.caption, color: colors.textPrimary },
   notifBold: { fontWeight: '700' },
-  notifTime: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  notifTime: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   orderRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   orderNo: { ...typography.bodyMedium, color: colors.textPrimary },
-  orderDate: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  orderDate: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   orderAmount: { ...typography.bodyMedium, color: colors.textPrimary, marginRight: spacing.sm },
 });

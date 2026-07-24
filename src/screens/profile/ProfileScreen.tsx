@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
   },
   rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  rowLabel: { ...typography.caption, color: colors.textMuted },
+  rowLabel: { ...typography.caption, color: colors.textSecondary },
   rowValue: { ...typography.bodyMedium, color: colors.textPrimary, marginTop: 2 },
   logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.lg },
   logoutText: { ...typography.bodyMedium, color: colors.danger },

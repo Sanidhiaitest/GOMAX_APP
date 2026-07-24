@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleProp, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../theme';
 
@@ -8,6 +8,7 @@ type Props = TextInputProps & {
   leftIcon?: keyof typeof Ionicons.glyphMap;
   rightIcon?: keyof typeof Ionicons.glyphMap;
   onRightIconPress?: () => void;
+  rightIconAccessibilityLabel?: string;
   prefix?: string;
   error?: string;
   /** 'outline' = white/primary-focus field (Figma text inputs). 'filled' = gray dropdown-style field. */
@@ -20,6 +21,7 @@ export function TextField({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  rightIconAccessibilityLabel,
   prefix,
   error,
   variant = 'outline',
@@ -61,13 +63,18 @@ export function TextField({
           {...rest}
         />
         {rightIcon ? (
-          <Ionicons
-            name={rightIcon}
-            size={18}
-            color={colors.neutral500}
-            style={styles.icon}
-            onPress={onRightIconPress}
-          />
+          onRightIconPress ? (
+            <Pressable
+              onPress={onRightIconPress}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={rightIconAccessibilityLabel ?? 'Field action'}
+            >
+              <Ionicons name={rightIcon} size={18} color={colors.neutral500} style={styles.icon} />
+            </Pressable>
+          ) : (
+            <Ionicons name={rightIcon} size={18} color={colors.neutral500} style={styles.icon} />
+          )
         ) : null}
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}

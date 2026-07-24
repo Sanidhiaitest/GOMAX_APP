@@ -35,7 +35,13 @@ export function AdminDashboardScreen() {
           <Text style={styles.title}>GoMax HQ</Text>
           <Text style={styles.subtitle}>Live across Mason, Dealer & Salesman apps</Text>
         </View>
-        <Pressable onPress={onLogout} style={styles.logoutButton}>
+        <Pressable
+          onPress={onLogout}
+          style={styles.logoutButton}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityRole="button"
+          accessibilityLabel="Log out"
+        >
           <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
         </Pressable>
       </View>

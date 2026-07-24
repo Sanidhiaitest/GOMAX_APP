@@ -95,5 +95,5 @@ const styles = StyleSheet.create({
   meta: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500, marginTop: 2 },
   actionRow: { flexDirection: 'row', gap: spacing.md },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxxl },
-  emptyText: { ...m3Type.labelLarge, color: colors.neutral400 },
+  emptyText: { ...m3Type.labelLarge, color: colors.neutral600 },
 });

@@ -82,5 +82,5 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: spacing.md },
   sectionTitle: { ...m3Type.titleMediumSemiBold, color: colors.textPrimary, marginTop: spacing.sm },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxxl },
-  emptyText: { ...m3Type.labelLarge, color: colors.neutral400 },
+  emptyText: { ...m3Type.labelLarge, color: colors.neutral600 },
 });

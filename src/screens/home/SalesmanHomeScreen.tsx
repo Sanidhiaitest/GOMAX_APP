@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   gridLabel: { ...typography.bodyMedium, color: colors.textPrimary },
   stopRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   stopName: { ...typography.bodyMedium, color: colors.textPrimary },
-  stopArea: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  stopArea: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   stopRight: { alignItems: 'flex-end', gap: 4 },
-  stopOutstanding: { ...typography.caption, color: colors.textMuted },
+  stopOutstanding: { ...typography.caption, color: colors.textSecondary },
 });

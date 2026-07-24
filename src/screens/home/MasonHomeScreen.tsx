@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   balanceCard: { flex: 1 },
   balanceLabel: { ...typography.label, color: colors.orange500 },
   balanceValue: { ...typography.h1, color: colors.textPrimary, marginTop: spacing.xs },
-  balanceHint: { ...typography.caption, color: colors.textMuted, marginTop: spacing.xs },
+  balanceHint: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.xs },
   kycBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -177,6 +177,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activityTitle: { ...typography.bodyMedium, color: colors.textPrimary },
-  activityTime: { ...typography.caption, color: colors.textMuted },
+  activityTime: { ...typography.caption, color: colors.textSecondary },
   activityPoints: { ...typography.bodyMedium, color: colors.success },
 });

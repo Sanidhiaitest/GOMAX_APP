@@ -46,7 +46,13 @@ export function DcrScreen() {
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>Daily Call Report</Text>
@@ -166,5 +172,5 @@ const styles = StyleSheet.create({
   entryTime: { ...m3Type.labelMedium, color: colors.neutral500 },
   entryNotes: { ...m3Type.labelLarge, fontSize: 13, color: colors.neutral500, marginTop: 4 },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
-  emptyText: { ...m3Type.labelLarge, color: colors.neutral400 },
+  emptyText: { ...m3Type.labelLarge, color: colors.neutral600 },
 });
