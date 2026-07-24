@@ -29,6 +29,8 @@ export type RootStackParamList = {
   OrderDetail: { orderId: string };
   Ledger: undefined;
   OrderPlacement: undefined;
+  DealerDetail: { dealerId: string };
+  Dcr: undefined;
 };
 
 declare global {

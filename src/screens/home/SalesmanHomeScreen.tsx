@@ -1,11 +1,14 @@
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
 import { beatPlan, salesmanTarget, streak, BeatStop } from '../../data/salesmanMock';
+import { RootStackParamList } from '../../navigation/types';
 
 const STATUS_META: Record<BeatStop['status'], { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
   visited: { label: 'Visited', color: colors.success, icon: 'checkmark-circle' },
@@ -21,11 +24,14 @@ const QUICK_ACTIONS: { key: string; label: string; icon: keyof typeof Ionicons.g
 ];
 
 export function SalesmanHomeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { fullName } = useApp();
   const pct = Math.min(100, Math.round((salesmanTarget.achieved / salesmanTarget.target) * 100));
 
-  const onQuickAction = (label: string) => {
-    Alert.alert(label, 'Salesman app is Phase 2 in the PRD — this action will connect once that build starts.');
+  const onQuickAction = (key: string, label: string) => {
+    if (key === 'order') return navigation.navigate('OrderPlacement');
+    if (key === 'dcr') return navigation.navigate('Dcr');
+    Alert.alert(label, 'Coming soon — next up after order taking and DCR.');
   };
 
   return (
@@ -54,7 +60,7 @@ export function SalesmanHomeScreen() {
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <View style={styles.grid}>
           {QUICK_ACTIONS.map((action) => (
-            <Pressable key={action.key} style={styles.gridItem} onPress={() => onQuickAction(action.label)}>
+            <Pressable key={action.key} style={styles.gridItem} onPress={() => onQuickAction(action.key, action.label)}>
               <Ionicons name={action.icon} size={22} color={colors.navy700} />
               <Text style={styles.gridLabel}>{action.label}</Text>
             </Pressable>
@@ -71,19 +77,22 @@ export function SalesmanHomeScreen() {
           {beatPlan.map((stop) => {
             const meta = STATUS_META[stop.status];
             return (
-              <Card key={stop.id} style={styles.stopRow}>
-                <Ionicons name={meta.icon} size={22} color={meta.color} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.stopName}>{stop.dealerName}</Text>
-                  <Text style={styles.stopArea}>{stop.area}</Text>
-                </View>
-                <View style={styles.stopRight}>
-                  <Text style={[styles.stopStatus, { color: meta.color }]}>{meta.label}</Text>
-                  {stop.outstanding > 0 ? (
-                    <Text style={styles.stopOutstanding}>₹{stop.outstanding.toLocaleString('en-IN')} due</Text>
-                  ) : null}
-                </View>
-              </Card>
+              <Pressable key={stop.id} onPress={() => navigation.navigate('DealerDetail', { dealerId: stop.id })}>
+                <Card style={styles.stopRow}>
+                  <Ionicons name={meta.icon} size={22} color={meta.color} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.stopName}>{stop.dealerName}</Text>
+                    <Text style={styles.stopArea}>{stop.area}</Text>
+                  </View>
+                  <View style={styles.stopRight}>
+                    <Text style={[styles.stopStatus, { color: meta.color }]}>{meta.label}</Text>
+                    {stop.outstanding > 0 ? (
+                      <Text style={styles.stopOutstanding}>₹{stop.outstanding.toLocaleString('en-IN')} due</Text>
+                    ) : null}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.neutral400} />
+                </Card>
+              </Pressable>
             );
           })}
         </View>

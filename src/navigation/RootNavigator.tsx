@@ -12,6 +12,8 @@ import { OrdersListScreen } from '../screens/dealer/OrdersListScreen';
 import { OrderDetailScreen } from '../screens/dealer/OrderDetailScreen';
 import { LedgerScreen } from '../screens/dealer/LedgerScreen';
 import { OrderPlacementScreen } from '../screens/dealer/OrderPlacementScreen';
+import { DealerDetailScreen } from '../screens/salesman/DealerDetailScreen';
+import { DcrScreen } from '../screens/salesman/DcrScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -29,6 +31,8 @@ export function RootNavigator() {
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="Ledger" component={LedgerScreen} />
       <Stack.Screen name="OrderPlacement" component={OrderPlacementScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="DealerDetail" component={DealerDetailScreen} />
+      <Stack.Screen name="Dcr" component={DcrScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }
