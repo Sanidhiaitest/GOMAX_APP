@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Card } from '../../components/Card';
@@ -8,9 +9,8 @@ import { Screen } from '../../components/Screen';
 import { dealerLedger, ledgerTransactions } from '../../data/dealerMock';
 import { RootStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Ledger'>;
-
-export function LedgerScreen({ navigation }: Props) {
+export function LedgerScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const utilisation = Math.round((dealerLedger.outstanding / dealerLedger.creditLimit) * 100);
 
   return (

@@ -23,20 +23,49 @@ const KYC_LABEL: Record<string, { label: string; color: string }> = {
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { fullName, mobileNumber, role, city, language, loyaltyTier, kycStatus, logout } = useApp();
+  const {
+    fullName,
+    mobileNumber,
+    role,
+    city,
+    language,
+    loyaltyTier,
+    kycStatus,
+    dealerBusiness,
+    dealerVerificationStatus,
+    employeeCode,
+    logout,
+  } = useApp();
   const kyc = KYC_LABEL[kycStatus];
 
   const rows: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; onPress?: () => void }[] = [
     { icon: 'call-outline', label: 'Mobile number', value: mobileNumber ? `+91 ${mobileNumber}` : '—' },
-    { icon: 'location-outline', label: 'City / District', value: city || '—' },
-    { icon: 'language-outline', label: 'Language', value: language || '—' },
-    {
-      icon: 'shield-checkmark-outline',
-      label: 'KYC status',
-      value: kyc.label,
-      onPress: () => navigation.navigate('Kyc'),
-    },
   ];
+
+  if (role === 'dealer') {
+    rows.push(
+      { icon: 'storefront-outline', label: 'Shop name', value: dealerBusiness.shopName || '—' },
+      { icon: 'document-text-outline', label: 'GST number', value: dealerBusiness.gstNumber || '—' },
+      {
+        icon: 'checkmark-done-outline',
+        label: 'Verification status',
+        value: dealerVerificationStatus === 'verified' ? 'Verified' : 'Pending',
+      }
+    );
+  } else if (role === 'salesman') {
+    rows.push({ icon: 'id-card-outline', label: 'Employee code', value: employeeCode || '—' });
+  } else {
+    rows.push(
+      { icon: 'location-outline', label: 'City / District', value: city || '—' },
+      { icon: 'language-outline', label: 'Language', value: language || '—' },
+      {
+        icon: 'shield-checkmark-outline',
+        label: 'KYC status',
+        value: kyc.label,
+        onPress: () => navigation.navigate('Kyc'),
+      }
+    );
+  }
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
@@ -10,11 +11,10 @@ import { SelectModal } from '../../components/SelectModal';
 import { beatPlan, DcrEntry, todaysDcrEntries } from '../../data/salesmanMock';
 import { RootStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Dcr'>;
-
 const OUTCOMES: DcrEntry['outcome'][] = ['Order taken', 'Payment collected', 'No order', 'Dealer closed'];
 
-export function DcrScreen({ navigation }: Props) {
+export function DcrScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [entries, setEntries] = useState<DcrEntry[]>(todaysDcrEntries);
   const [dealerModal, setDealerModal] = useState(false);
   const [outcomeModal, setOutcomeModal] = useState(false);

@@ -4,11 +4,21 @@ export type Role = 'mason' | 'dealer' | 'salesman';
 
 export type KycStatus = 'unverified' | 'pending' | 'verified';
 
+export type DealerVerificationStatus = 'pending' | 'verified';
+
 export type ScanActivity = {
   id: string;
   productName: string;
   points: number;
   scannedAt: string;
+};
+
+export type DealerBusinessDetails = {
+  shopName: string;
+  gstNumber: string;
+  address: string;
+  bankUpi: string;
+  hasShopPhoto: boolean;
 };
 
 type AppState = {
@@ -24,12 +34,17 @@ type AppState = {
   points: number;
   runs: number;
   scanHistory: ScanActivity[];
+  dealerBusiness: DealerBusinessDetails;
+  dealerVerificationStatus: DealerVerificationStatus;
+  employeeCode: string;
 };
 
 type AppContextValue = AppState & {
   setMobileNumber: (v: string) => void;
   setRole: (r: Role) => void;
   setBasicDetails: (v: { fullName: string; city: string; language: string }) => void;
+  setDealerBusiness: (v: DealerBusinessDetails) => void;
+  setEmployeeCode: (v: string) => void;
   completeOnboarding: () => void;
   setKycStatus: (s: KycStatus) => void;
   addScan: (activity: Omit<ScanActivity, 'id' | 'scannedAt'>) => void;
@@ -54,6 +69,9 @@ const initialState: AppState = {
     { id: '1', productName: 'GoMax Tile Adhesive 20kg', points: 25, scannedAt: 'Today, 10:14 AM' },
     { id: '2', productName: 'GoMax Waterproofing 5kg', points: 15, scannedAt: 'Yesterday, 4:02 PM' },
   ],
+  dealerBusiness: { shopName: '', gstNumber: '', address: '', bankUpi: '', hasShopPhoto: false },
+  dealerVerificationStatus: 'pending',
+  employeeCode: '',
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -67,6 +85,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setMobileNumber: (v) => setState((s) => ({ ...s, mobileNumber: v, isAuthenticated: true })),
       setRole: (r) => setState((s) => ({ ...s, role: r })),
       setBasicDetails: (v) => setState((s) => ({ ...s, ...v })),
+      setDealerBusiness: (dealerBusiness) => setState((s) => ({ ...s, dealerBusiness })),
+      setEmployeeCode: (employeeCode) => setState((s) => ({ ...s, employeeCode })),
       completeOnboarding: () => setState((s) => ({ ...s, onboardingComplete: true })),
       setKycStatus: (kycStatus) => setState((s) => ({ ...s, kycStatus })),
       addScan: (activity) =>

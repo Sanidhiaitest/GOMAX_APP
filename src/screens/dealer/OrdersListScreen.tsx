@@ -1,14 +1,13 @@
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, spacing } from '../../theme';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { recentOrders, OrderStatus } from '../../data/dealerMock';
 import { RootStackParamList } from '../../navigation/types';
-
-type Props = NativeStackScreenProps<RootStackParamList, 'OrdersList'>;
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
   Placed: colors.textSecondary,
@@ -17,7 +16,8 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   Delivered: colors.success,
 };
 
-export function OrdersListScreen({ navigation }: Props) {
+export function OrdersListScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>

@@ -19,17 +19,26 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 
 export function DealerHomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { fullName, city } = useApp();
+  const { fullName, city, dealerBusiness, dealerVerificationStatus } = useApp();
   const utilisation = Math.round((dealerLedger.outstanding / dealerLedger.creditLimit) * 100);
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Namaste, {fullName || 'Dealer'}</Text>
-        <Text style={styles.subGreeting}>{city || 'Your shop'} · Dealer account</Text>
+        <Text style={styles.subGreeting}>{dealerBusiness.shopName || city || 'Your shop'} · Dealer account</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {dealerVerificationStatus === 'pending' ? (
+          <Card style={styles.verificationBanner}>
+            <Ionicons name="time-outline" size={22} color={colors.orange600} />
+            <Text style={styles.verificationText}>
+              Verification pending — your salesman will visit to confirm details and set up your credit line.
+            </Text>
+          </Card>
+        ) : null}
+
         <Pressable onPress={() => navigation.navigate('Ledger')}>
           <Card style={styles.ledgerCard}>
             <Text style={styles.ledgerLabel}>OUTSTANDING BALANCE</Text>
@@ -109,6 +118,8 @@ const styles = StyleSheet.create({
   },
   ledgerBarFill: { height: '100%', backgroundColor: colors.orange500 },
   ledgerHint: { ...typography.caption, color: 'rgba(255,255,255,0.7)', marginTop: spacing.sm },
+  verificationBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.orange50, borderColor: colors.orange100 },
+  verificationText: { flex: 1, ...typography.caption, color: colors.orange600 },
   newOrderCta: {
     flexDirection: 'row',
     alignItems: 'center',

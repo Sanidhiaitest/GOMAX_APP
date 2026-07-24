@@ -7,6 +7,9 @@ import { OtpScreen } from '../screens/onboarding/OtpScreen';
 import { RoleSelectScreen } from '../screens/onboarding/RoleSelectScreen';
 import { BasicDetailsScreen } from '../screens/onboarding/BasicDetailsScreen';
 import { BirthdayScreen } from '../screens/onboarding/BirthdayScreen';
+import { DealerBusinessDetailsScreen } from '../screens/onboarding/DealerBusinessDetailsScreen';
+import { DealerPendingApprovalScreen } from '../screens/onboarding/DealerPendingApprovalScreen';
+import { SalesmanCodeScreen } from '../screens/onboarding/SalesmanCodeScreen';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
@@ -17,8 +20,14 @@ export function OnboardingNavigator() {
       <Stack.Screen name="MobileNumber" component={MobileNumberScreen} />
       <Stack.Screen name="Otp" component={OtpScreen} />
       <Stack.Screen name="RoleSelect" component={RoleSelectScreen} />
+      {/* Mason path */}
       <Stack.Screen name="BasicDetails" component={BasicDetailsScreen} />
       <Stack.Screen name="Birthday" component={BirthdayScreen} />
+      {/* Dealer path */}
+      <Stack.Screen name="DealerBusinessDetails" component={DealerBusinessDetailsScreen} />
+      <Stack.Screen name="DealerPendingApproval" component={DealerPendingApprovalScreen} />
+      {/* Salesman path */}
+      <Stack.Screen name="SalesmanCode" component={SalesmanCodeScreen} />
     </Stack.Navigator>
   );
 }

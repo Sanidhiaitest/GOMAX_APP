@@ -1,15 +1,19 @@
-import { NavigatorScreenParams } from '@react-navigation/native';
-
 export type OnboardingStackParamList = {
   Splash: undefined;
   MobileNumber: undefined;
   Otp: undefined;
   RoleSelect: undefined;
+  // Mason path
   BasicDetails: undefined;
   Birthday: undefined;
+  // Dealer path
+  DealerBusinessDetails: undefined;
+  DealerPendingApproval: undefined;
+  // Salesman path
+  SalesmanCode: undefined;
 };
 
-export type MainTabParamList = {
+export type MasonTabParamList = {
   Home: undefined;
   Products: undefined;
   Scan: undefined;
@@ -17,9 +21,23 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
+export type DealerTabParamList = {
+  Home: undefined;
+  Orders: undefined;
+  Ledger: undefined;
+  Profile: undefined;
+};
+
+export type SalesmanTabParamList = {
+  Home: undefined;
+  Dealers: undefined;
+  Dcr: undefined;
+  Profile: undefined;
+};
+
 export type RootStackParamList = {
-  Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
-  Main: NavigatorScreenParams<MainTabParamList>;
+  Onboarding: undefined;
+  Main: undefined;
   Kyc: undefined;
   SpinWheel: undefined;
   Referral: undefined;
@@ -31,6 +49,7 @@ export type RootStackParamList = {
   OrderPlacement: undefined;
   DealerDetail: { dealerId: string };
   Dcr: undefined;
+  DealersList: undefined;
 };
 
 declare global {

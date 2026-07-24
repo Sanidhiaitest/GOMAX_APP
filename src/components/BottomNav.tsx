@@ -11,6 +11,14 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Scan: 'qr-code',
   Redeem: 'gift-outline',
   Profile: 'person-outline',
+  Orders: 'receipt-outline',
+  Ledger: 'wallet-outline',
+  Dealers: 'people-outline',
+  Dcr: 'document-text-outline',
+};
+
+const LABELS: Record<string, string> = {
+  Dcr: 'Reports',
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {
@@ -47,7 +55,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
               size={22}
               color={isFocused ? colors.orange500 : colors.textSecondary}
             />
-            <Text style={[styles.label, isFocused && styles.labelActive]}>{route.name}</Text>
+            <Text style={[styles.label, isFocused && styles.labelActive]}>{LABELS[route.name] ?? route.name}</Text>
           </Pressable>
         );
       })}

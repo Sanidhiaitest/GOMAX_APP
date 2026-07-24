@@ -24,6 +24,8 @@ export function RoleSelectScreen({ navigation }: Props) {
   const onContinue = () => {
     if (!selected) return;
     setRole(selected);
+    if (selected === 'dealer') return navigation.navigate('DealerBusinessDetails');
+    if (selected === 'salesman') return navigation.navigate('SalesmanCode');
     navigation.navigate('BasicDetails');
   };
 

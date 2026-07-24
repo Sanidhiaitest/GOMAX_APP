@@ -8,9 +8,9 @@ import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
-import { MainTabParamList, RootStackParamList } from '../../navigation/types';
+import { MasonTabParamList, RootStackParamList } from '../../navigation/types';
 
-type Nav = BottomTabNavigationProp<MainTabParamList> & NativeStackNavigationProp<RootStackParamList>;
+type Nav = BottomTabNavigationProp<MasonTabParamList> & NativeStackNavigationProp<RootStackParamList>;
 
 const QUICK_ACTIONS: { key: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: 'spin', label: 'Spin Wheel', icon: 'sync-circle-outline' },
