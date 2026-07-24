@@ -6,6 +6,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
 import { MasonTabParamList, RootStackParamList } from '../../navigation/types';
@@ -59,9 +60,14 @@ export function MasonHomeScreen() {
         {kycStatus !== 'verified' ? (
           <Pressable onPress={() => navigation.navigate('Kyc')}>
             <Card style={styles.kycBanner}>
-              <Ionicons name="shield-checkmark-outline" size={22} color={colors.orange600} />
-              <Text style={styles.kycText}>Complete KYC to unlock full redemption limits</Text>
-              <Ionicons name="chevron-forward" size={18} color={colors.orange600} />
+              <View style={styles.kycIcon}>
+                <Ionicons name="shield-checkmark-outline" size={20} color={colors.orange600} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.kycTitle}>Complete KYC</Text>
+                <Text style={styles.kycText}>Unlock full limits</Text>
+              </View>
+              <Pill label="Verify" tone="warning" icon="arrow-forward" size="sm" />
             </Card>
           </Pressable>
         ) : null}
@@ -129,7 +135,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orange50,
     borderColor: colors.orange100,
   },
-  kycText: { flex: 1, ...typography.caption, color: colors.orange600 },
+  kycIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  kycTitle: { ...typography.bodyMedium, color: colors.textPrimary },
+  kycText: { ...typography.caption, color: colors.orange600, marginTop: 1 },
   scanCta: {
     flexDirection: 'row',
     alignItems: 'center',
