@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,7 +6,9 @@ import { StatusBar } from 'expo-status-bar';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
+import { RewardBurst, UnlockReveal } from '../../components/animations';
 import { useApp, REDEMPTION_AUTO_APPROVE_CEILING } from '../../state/AppContext';
+import { successHaptic } from '../../utils/haptics';
 
 const QUICK_AMOUNTS = [200, 500, 1000];
 
@@ -21,6 +23,14 @@ export function WalletScreen() {
   const [upiId, setUpiId] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | 'all' | null>(null);
   const [success, setSuccess] = useState(false);
+  const [burstTrigger, setBurstTrigger] = useState(0);
+
+  useEffect(() => {
+    if (success) {
+      setBurstTrigger((n) => n + 1);
+      successHaptic();
+    }
+  }, [success]);
 
   const amount = selectedAmount === 'all' ? points : selectedAmount ?? 0;
   const isValidUpi = /^[\w.-]{2,}@[a-zA-Z]{2,}$/.test(upiId);
@@ -137,9 +147,12 @@ export function WalletScreen() {
       <Modal visible={success} transparent animationType="fade">
         <View style={styles.resultBackdrop}>
           <View style={styles.resultCard}>
-            <View style={styles.resultIcon}>
-              <Ionicons name="checkmark" size={32} color={colors.white} />
-            </View>
+            <RewardBurst trigger={burstTrigger} count={18} />
+            <UnlockReveal visible={success} glow glowColor={colors.success}>
+              <View style={styles.resultIcon}>
+                <Ionicons name="checkmark" size={32} color={colors.white} />
+              </View>
+            </UnlockReveal>
             <Text style={styles.resultTitle}>Withdrawal requested</Text>
             <Text style={styles.resultSubtitle}>
               {amount} pts will reach your UPI within {amount < AUTO_APPROVE_CEILING ? 'a few minutes' : '4 hours'}.
@@ -266,7 +279,7 @@ const styles = StyleSheet.create({
   amountChipText: { fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.walletBg },
   amountChipSub: { fontFamily: 'Inter_500Medium', fontSize: 9, color: 'rgba(10,22,40,0.35)', marginTop: 2 },
   resultBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
-  resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm },
+  resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, position: 'relative', overflow: 'hidden' },
   resultIcon: {
     width: 64,
     height: 64,

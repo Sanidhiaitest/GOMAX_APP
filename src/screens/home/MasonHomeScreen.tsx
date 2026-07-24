@@ -8,6 +8,7 @@ import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
+import { GlowBorder, PressableScale } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
 import { MasonTabParamList, RootStackParamList } from '../../navigation/types';
 
@@ -72,10 +73,12 @@ export function MasonHomeScreen() {
           </Pressable>
         ) : null}
 
-        <Pressable style={styles.scanCta} onPress={() => navigation.navigate('Scan')}>
-          <Ionicons name="qr-code-outline" size={22} color={colors.white} />
-          <Text style={styles.scanCtaText}>Scan a Product</Text>
-        </Pressable>
+        <GlowBorder cornerRadius={radius.md} borderWidth={2} backgroundColor={colors.surfaceMuted} speed={3800}>
+          <PressableScale style={styles.scanCta} onPress={() => navigation.navigate('Scan')}>
+            <Ionicons name="qr-code-outline" size={22} color={colors.white} />
+            <Text style={styles.scanCtaText}>Scan a Product</Text>
+          </PressableScale>
+        </GlowBorder>
 
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <View style={styles.grid}>

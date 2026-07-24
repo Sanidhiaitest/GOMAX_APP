@@ -7,8 +7,10 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
+import { GlowBorder, RewardBurst } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
 import { RootStackParamList } from '../../navigation/types';
+import { tapHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Referral'>;
 
@@ -33,10 +35,13 @@ const STEPS = [
 export function ReferralScreen({ navigation }: Props) {
   const { addRuns } = useApp();
   const [copied, setCopied] = useState(false);
+  const [burstTrigger, setBurstTrigger] = useState(0);
 
   const onCopy = async () => {
     await Clipboard.setStringAsync(REFERRAL_CODE);
     setCopied(true);
+    setBurstTrigger((n) => n + 1);
+    tapHaptic();
     setTimeout(() => setCopied(false), 1800);
   };
 
@@ -58,25 +63,28 @@ export function ReferralScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Card style={styles.heroCard}>
-          <View style={styles.heroIcon}>
-            <Ionicons name="people" size={28} color={colors.primary700} />
-          </View>
-          <Text style={styles.heroTitle}>Dost ko bulao, Points kamao!</Text>
-          <Text style={styles.heroSubtitle}>Share your code — earn Points for every friend who joins</Text>
+        <GlowBorder cornerRadius={radius.xl} borderWidth={2} backgroundColor={colors.white} speed={4200}>
+          <Card style={[styles.heroCard, styles.heroCardInGlow]}>
+            <RewardBurst trigger={burstTrigger} count={18} />
+            <View style={styles.heroIcon}>
+              <Ionicons name="people" size={28} color={colors.primary700} />
+            </View>
+            <Text style={styles.heroTitle}>Dost ko bulao, Points kamao!</Text>
+            <Text style={styles.heroSubtitle}>Share your code — earn Points for every friend who joins</Text>
 
-          <View style={styles.codeRow}>
-            <Text style={styles.codeText}>{REFERRAL_CODE}</Text>
-            <Pressable style={styles.copyButton} onPress={onCopy}>
-              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={colors.white} />
-              <Text style={styles.copyButtonText}>{copied ? 'Copied' : 'Copy'}</Text>
-            </Pressable>
-          </View>
+            <View style={styles.codeRow}>
+              <Text style={styles.codeText}>{REFERRAL_CODE}</Text>
+              <Pressable style={styles.copyButton} onPress={onCopy}>
+                <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={colors.white} />
+                <Text style={styles.copyButtonText}>{copied ? 'Copied' : 'Copy'}</Text>
+              </Pressable>
+            </View>
 
-          <View style={{ marginTop: spacing.lg }}>
-            <Button label="Share on WhatsApp" onPress={onShareWhatsApp} variant="whatsapp" icon="logo-whatsapp" />
-          </View>
-        </Card>
+            <View style={{ marginTop: spacing.lg }}>
+              <Button label="Share on WhatsApp" onPress={onShareWhatsApp} variant="whatsapp" icon="logo-whatsapp" />
+            </View>
+          </Card>
+        </GlowBorder>
 
         <View style={styles.statsRow}>
           {STATS.map((stat) => (
@@ -116,6 +124,7 @@ const styles = StyleSheet.create({
   headerTitle: { ...m3Type.titleLarge, color: colors.textPrimary },
   content: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.xl },
   heroCard: { alignItems: 'center' },
+  heroCardInGlow: { borderWidth: 0, position: 'relative', overflow: 'hidden' },
   heroIcon: {
     width: 56,
     height: 56,

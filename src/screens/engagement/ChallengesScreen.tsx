@@ -4,9 +4,13 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
-import { badges, leaderboard, weeklyChallenges } from '../../data/challengesMock';
+import { PressableScale, RewardBurst, UnlockReveal } from '../../components/animations';
+import { badges, Challenge, leaderboard, weeklyChallenges } from '../../data/challengesMock';
+import { useApp } from '../../state/AppContext';
 import { RootStackParamList } from '../../navigation/types';
+import { successHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Challenges'>;
 
@@ -21,6 +25,18 @@ const TABS: { key: Tab; label: string }[] = [
 // shared earlier (Challenges / Leaderboard / Badges tabs).
 export function ChallengesScreen({ navigation }: Props) {
   const [tab, setTab] = useState<Tab>('challenges');
+  const { addRuns } = useApp();
+  const [claimed, setClaimed] = useState<Record<string, boolean>>({});
+  const [burstTriggers, setBurstTriggers] = useState<Record<string, number>>({});
+
+  const onClaim = (c: Challenge) => {
+    if (claimed[c.id]) return;
+    setClaimed((prev) => ({ ...prev, [c.id]: true }));
+    setBurstTriggers((prev) => ({ ...prev, [c.id]: (prev[c.id] ?? 0) + 1 }));
+    const runsMatch = c.reward.match(/(\d+)\s*Runs/i);
+    if (runsMatch) addRuns(Number(runsMatch[1]));
+    successHaptic();
+  };
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -54,8 +70,10 @@ export function ChallengesScreen({ navigation }: Props) {
             {weeklyChallenges.map((c) => {
               const pct = Math.min(100, Math.round((c.progress / c.target) * 100));
               const done = c.progress >= c.target;
+              const isClaimed = claimed[c.id];
               return (
-                <Card key={c.id}>
+                <Card key={c.id} style={done ? styles.challengeCardDone : undefined}>
+                  <RewardBurst trigger={burstTriggers[c.id] ?? 0} count={16} />
                   <View style={styles.challengeHeaderRow}>
                     <Text style={styles.challengeTitle}>{c.title}</Text>
                     <Text style={styles.challengeReward}>{c.reward}</Text>
@@ -64,9 +82,22 @@ export function ChallengesScreen({ navigation }: Props) {
                   <View style={styles.progressTrack}>
                     <View style={[styles.progressFill, { width: `${pct}%` }, done && styles.progressFillDone]} />
                   </View>
-                  <Text style={styles.progressLabel}>
-                    {done ? 'Completed' : `${c.progress} / ${c.target}`}
-                  </Text>
+                  {!done ? (
+                    <Text style={styles.progressLabel}>{`${c.progress} / ${c.target}`}</Text>
+                  ) : (
+                    <View style={styles.claimRow}>
+                      {isClaimed ? (
+                        <UnlockReveal visible={isClaimed} style={styles.claimedReveal}>
+                          <Pill label="Claimed" tone="success" icon="checkmark-circle" size="sm" />
+                        </UnlockReveal>
+                      ) : (
+                        <PressableScale style={styles.claimButton} onPress={() => onClaim(c)}>
+                          <Ionicons name="gift-outline" size={13} color={colors.white} />
+                          <Text style={styles.claimButtonText}>Claim reward</Text>
+                        </PressableScale>
+                      )}
+                    </View>
+                  )}
                 </Card>
               );
             })}
@@ -126,6 +157,19 @@ const styles = StyleSheet.create({
   progressFill: { height: '100%', backgroundColor: colors.primary700 },
   progressFillDone: { backgroundColor: colors.success },
   progressLabel: { ...m3Type.labelMedium, fontSize: 11, color: colors.neutral500, marginTop: spacing.xs },
+  challengeCardDone: { position: 'relative', overflow: 'hidden' },
+  claimRow: { flexDirection: 'row', marginTop: spacing.sm },
+  claimedReveal: { alignItems: 'flex-start' },
+  claimButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primary700,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+  },
+  claimButtonText: { ...m3Type.labelLarge, fontSize: 12, color: colors.white },
   leaderRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   leaderRowYou: { backgroundColor: colors.orange50, borderColor: colors.primary700 },
   leaderRank: { ...m3Type.titleMediumSemiBold, width: 32, color: colors.neutral500 },

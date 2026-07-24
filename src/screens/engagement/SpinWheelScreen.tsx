@@ -6,8 +6,10 @@ import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
+import { GlowBorder, RewardBurst, UnlockReveal } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
 import { RootStackParamList } from '../../navigation/types';
+import { softHaptic, successHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SpinWheel'>;
 
@@ -43,6 +45,7 @@ export function SpinWheelScreen({ navigation }: Props) {
   const rotation = useRef(new Animated.Value(0)).current;
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<{ label: string; runs: number } | null>(null);
+  const [burstTrigger, setBurstTrigger] = useState(0);
   const currentRotation = useRef(0);
 
   const onSpin = () => {
@@ -61,7 +64,13 @@ export function SpinWheelScreen({ navigation }: Props) {
     }).start(() => {
       currentRotation.current = target % 360;
       const won = SEGMENTS[winIndex];
-      if (won.runs > 0) addRuns(won.runs);
+      if (won.runs > 0) {
+        addRuns(won.runs);
+        setBurstTrigger((n) => n + 1);
+        successHaptic();
+      } else {
+        softHaptic();
+      }
       setResult({ label: won.label, runs: won.runs });
       setSpinning(false);
     });
@@ -123,21 +132,26 @@ export function SpinWheelScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <Button
-          label={spinning ? 'Spinning…' : '🎯 SPIN'}
-          onPress={onSpin}
-          disabled={spinning}
-          loading={spinning}
-          icon={null}
-        />
+        <GlowBorder cornerRadius={radius.lg} borderWidth={2} backgroundColor={colors.secondary800} active={!spinning}>
+          <Button
+            label={spinning ? 'Spinning…' : '🎯 SPIN'}
+            onPress={onSpin}
+            disabled={spinning}
+            loading={spinning}
+            icon={null}
+          />
+        </GlowBorder>
         <Text style={styles.footerHint}>Spin resets in Scratch card with your reward</Text>
       </View>
 
       <Modal visible={!!result} transparent animationType="fade">
         <View style={styles.resultBackdrop}>
           <View style={styles.resultCard}>
-            <Text style={styles.resultEmoji}>{result && result.runs > 0 ? '🎉' : '😅'}</Text>
-            <Text style={styles.resultTitle}>{result?.label}</Text>
+            <RewardBurst trigger={burstTrigger} />
+            <UnlockReveal visible={!!result} glow={!!result && result.runs > 0}>
+              <Text style={styles.resultEmoji}>{result && result.runs > 0 ? '🎉' : '😅'}</Text>
+              <Text style={styles.resultTitle}>{result?.label}</Text>
+            </UnlockReveal>
             {result && result.runs > 0 ? (
               <Text style={styles.resultSubtitle}>Added to your Runs balance</Text>
             ) : (
@@ -185,7 +199,7 @@ const styles = StyleSheet.create({
   footer: { paddingHorizontal: spacing.xl, marginTop: 'auto', paddingBottom: spacing.xl, gap: spacing.md },
   footerHint: { ...m3Type.labelMedium, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
   resultBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
-  resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm },
+  resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, position: 'relative', overflow: 'hidden' },
   resultEmoji: { fontSize: 48 },
   resultTitle: { ...m3Type.headlineMedium, color: colors.secondary700 },
   resultSubtitle: { ...m3Type.labelLarge, color: colors.neutral500, marginBottom: spacing.lg },

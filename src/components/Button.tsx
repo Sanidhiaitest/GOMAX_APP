@@ -8,7 +8,11 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import { colors, fontFamily, radius, spacing, typography } from '../theme';
+import { tapHaptic } from '../utils/haptics';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'whatsapp' | 'neutralDisabled';
 
@@ -34,17 +38,34 @@ export function Button({
   roboto = false,
 }: Props) {
   const isDisabled = disabled || loading || variant === 'neutralDisabled';
+  const pressed = useSharedValue(0);
+
+  const pressedStyle = useAnimatedStyle(() => ({
+    opacity: 1 - pressed.value * 0.15,
+    transform: [{ scale: 1 - pressed.value * 0.035 }],
+  }));
+
+  const onPressIn = () => {
+    if (isDisabled) return;
+    pressed.value = withSpring(1, { damping: 16, stiffness: 260, mass: 0.6 });
+    tapHaptic();
+  };
+  const onPressOut = () => {
+    pressed.value = withTiming(0, { duration: 150 });
+  };
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      style={[
         styles.base,
         variantStyles[variant],
         fullWidth && styles.fullWidth,
         disabled && variant !== 'neutralDisabled' && styles.disabled,
-        pressed && !isDisabled && styles.pressed,
+        pressedStyle,
       ]}
     >
       {loading ? (
@@ -61,7 +82,7 @@ export function Button({
           ) : null}
         </View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -79,7 +100,6 @@ const styles = StyleSheet.create({
   label: { ...typography.button },
   labelRoboto: { fontFamily: fontFamily.robotoMedium },
   disabled: { opacity: 0.5 },
-  pressed: { opacity: 0.85 },
 });
 
 const variantStyles = StyleSheet.create({

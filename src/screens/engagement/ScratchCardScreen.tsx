@@ -4,9 +4,11 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Screen } from '../../components/Screen';
+import { RewardBurst, UnlockReveal } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
 import { initialScratchCards, ScratchCard } from '../../data/scratchCardsMock';
 import { RootStackParamList } from '../../navigation/types';
+import { successHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScratchCards'>;
 
@@ -16,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ScratchCards'>;
 export function ScratchCardScreen({ navigation }: Props) {
   const { addRuns } = useApp();
   const [cards, setCards] = useState<ScratchCard[]>(initialScratchCards);
+  const [burstTriggers, setBurstTriggers] = useState<Record<string, number>>({});
   const flips = useRef<Record<string, Animated.Value>>(
     Object.fromEntries(initialScratchCards.map((c) => [c.id, new Animated.Value(0)]))
   ).current;
@@ -25,6 +28,8 @@ export function ScratchCardScreen({ navigation }: Props) {
     Animated.spring(flips[card.id], { toValue: 1, useNativeDriver: true, friction: 8 }).start();
     addRuns(card.reward);
     setCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, scratched: true } : c)));
+    setBurstTriggers((prev) => ({ ...prev, [card.id]: (prev[card.id] ?? 0) + 1 }));
+    successHaptic();
   };
 
   return (
@@ -66,9 +71,12 @@ export function ScratchCardScreen({ navigation }: Props) {
                 <Animated.View
                   style={[styles.face, styles.back, { opacity: backOpacity, transform: [{ perspective: 800 }, { rotateY: backRotate }] }]}
                 >
-                  <Text style={styles.rewardEmoji}>🎉</Text>
-                  <Text style={styles.rewardText}>+{card.reward} Runs</Text>
-                  <Text style={styles.rewardHint}>Added to your wallet</Text>
+                  <RewardBurst trigger={burstTriggers[card.id] ?? 0} count={16} />
+                  <UnlockReveal visible={card.scratched} glow>
+                    <Text style={styles.rewardEmoji}>🎉</Text>
+                    <Text style={styles.rewardText}>+{card.reward} Runs</Text>
+                    <Text style={styles.rewardHint}>Added to your wallet</Text>
+                  </UnlockReveal>
                 </Animated.View>
               </View>
               <Text style={styles.expiry}>{card.expiresIn}</Text>
@@ -108,6 +116,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary700,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   ticketIcon: {
     width: 40,
