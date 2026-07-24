@@ -39,6 +39,16 @@ export function ProfileScreen() {
   } = useApp();
   const kyc = KYC_LABEL[kycStatus];
 
+  // logout() only resets AppContext state — it never moves the navigator.
+  // Without an explicit reset here, "Main" stays mounted and RoleTabRouter's
+  // role === null fallback silently re-renders the Mason tabs, leaving a
+  // "logged out" user stuck inside the app with no way back to onboarding.
+  // Mirrors the pattern AdminDashboardScreen already uses for admin logout.
+  const onLogout = () => {
+    logout();
+    navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
+  };
+
   type Row = {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
@@ -116,7 +126,7 @@ export function ProfileScreen() {
           ))}
         </Card>
 
-        <Pressable style={styles.logout} onPress={logout}>
+        <Pressable style={styles.logout} onPress={onLogout}>
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />
           <Text style={styles.logoutText}>Log out</Text>
         </Pressable>

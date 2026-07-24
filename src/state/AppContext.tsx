@@ -143,10 +143,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addRuns: (amount) => setState((s) => ({ ...s, runs: s.runs + amount })),
       approveDealerVerification: () => setState((s) => ({ ...s, dealerVerificationStatus: 'verified' })),
       decideRedemption: (id, decision) =>
-        setState((s) => ({
-          ...s,
-          redemptionRequests: s.redemptionRequests.map((r) => (r.id === id ? { ...r, status: decision } : r)),
-        })),
+        setState((s) => {
+          // A pending (>=200pt) redemption already deducted the points from
+          // the wallet up-front when it was requested (see redeemPoints).
+          // Rejecting it must credit those points back — otherwise the
+          // mason's balance is silently destroyed by an admin rejection.
+          const target = s.redemptionRequests.find((r) => r.id === id);
+          const refund = decision === 'rejected' && target?.status === 'pending' ? target.amount : 0;
+          return {
+            ...s,
+            points: s.points + refund,
+            redemptionRequests: s.redemptionRequests.map((r) => (r.id === id ? { ...r, status: decision } : r)),
+          };
+        }),
       adminLogin: () => setState((s) => ({ ...s, isAdminAuthenticated: true })),
       adminLogout: () => setState((s) => ({ ...s, isAdminAuthenticated: false })),
       logout: () => setState(initialState),
