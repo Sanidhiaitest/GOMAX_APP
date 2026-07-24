@@ -21,6 +21,8 @@ export type RootStackParamList = {
   Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
   Main: NavigatorScreenParams<MainTabParamList>;
   Kyc: undefined;
+  SpinWheel: undefined;
+  Referral: undefined;
 };
 
 declare global {

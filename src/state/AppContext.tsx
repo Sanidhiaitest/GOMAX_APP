@@ -34,6 +34,7 @@ type AppContextValue = AppState & {
   setKycStatus: (s: KycStatus) => void;
   addScan: (activity: Omit<ScanActivity, 'id' | 'scannedAt'>) => void;
   redeemPoints: (amount: number) => void;
+  addRuns: (amount: number) => void;
   logout: () => void;
 };
 
@@ -78,6 +79,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ],
         })),
       redeemPoints: (amount) => setState((s) => ({ ...s, points: Math.max(0, s.points - amount) })),
+      addRuns: (amount) => setState((s) => ({ ...s, runs: s.runs + amount })),
       logout: () => setState(initialState),
     }),
     [state]

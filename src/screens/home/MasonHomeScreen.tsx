@@ -23,8 +23,10 @@ export function MasonHomeScreen() {
   const navigation = useNavigation<Nav>();
   const { fullName, points, runs, loyaltyTier, kycStatus, scanHistory } = useApp();
 
-  const onQuickAction = (label: string) => {
-    Alert.alert(label, 'Coming soon — this is a P1 feature, next up after the P0 build.');
+  const onQuickAction = (key: string, label: string) => {
+    if (key === 'spin') return navigation.navigate('SpinWheel');
+    if (key === 'refer') return navigation.navigate('Referral');
+    Alert.alert(label, 'Coming soon — next up after Spin Wheel and Refer & Earn.');
   };
 
   return (
@@ -71,7 +73,7 @@ export function MasonHomeScreen() {
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <View style={styles.grid}>
           {QUICK_ACTIONS.map((action) => (
-            <Pressable key={action.key} style={styles.gridItem} onPress={() => onQuickAction(action.label)}>
+            <Pressable key={action.key} style={styles.gridItem} onPress={() => onQuickAction(action.key, action.label)}>
               <Ionicons name={action.icon} size={22} color={colors.navy700} />
               <Text style={styles.gridLabel}>{action.label}</Text>
             </Pressable>

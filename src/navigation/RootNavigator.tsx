@@ -4,6 +4,8 @@ import { RootStackParamList } from './types';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { MainTabNavigator } from './MainTabNavigator';
 import { KycScreen } from '../screens/kyc/KycScreen';
+import { SpinWheelScreen } from '../screens/engagement/SpinWheelScreen';
+import { ReferralScreen } from '../screens/engagement/ReferralScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -13,6 +15,8 @@ export function RootNavigator() {
       <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
       <Stack.Screen name="Main" component={MainTabNavigator} />
       <Stack.Screen name="Kyc" component={KycScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="SpinWheel" component={SpinWheelScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="Referral" component={ReferralScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }
