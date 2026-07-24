@@ -34,6 +34,13 @@ export function OrdersListScreen() {
         keyExtractor={(o) => o.id}
         contentContainerStyle={styles.content}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="receipt-outline" size={40} color={colors.neutral400} />
+            <Text style={styles.emptyText}>No orders yet</Text>
+            <Text style={styles.emptySubtext}>Orders you place will show up here</Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <Pressable onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}>
             <Card style={styles.row}>
@@ -63,4 +70,7 @@ const styles = StyleSheet.create({
   orderNo: { ...m3Type.titleMedium, fontSize: 15, color: colors.textPrimary },
   orderDate: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500, marginTop: 2 },
   amount: { ...m3Type.titleMedium, fontSize: 15, color: colors.textPrimary },
+  empty: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.xxxl },
+  emptyText: { ...m3Type.titleMedium, fontSize: 15, color: colors.neutral500 },
+  emptySubtext: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral400 },
 });
