@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { NativeSyntheticEvent, StyleSheet, TextInput, TextInputKeyPressEventData, View } from 'react-native';
-import { colors, radius, spacing, typography } from '../theme';
+import { colors, m3Type } from '../theme';
 
 type Props = {
   length?: number;
@@ -36,7 +36,7 @@ export function OtpInput({ length = 5, value, onChange }: Props) {
           ref={(ref) => {
             inputs.current[index] = ref;
           }}
-          style={[styles.box, digit && styles.boxFilled]}
+          style={styles.box}
           keyboardType="number-pad"
           maxLength={1}
           value={digit}
@@ -51,15 +51,13 @@ export function OtpInput({ length = 5, value, onChange }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   box: {
-    width: 49,
-    height: 56,
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.surfaceMuted,
+    width: 55,
+    height: 62,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.inputBorder,
     textAlign: 'center',
-    ...typography.h2,
-    color: colors.textPrimary,
+    ...m3Type.titleLarge,
+    color: colors.neutral950,
   },
-  boxFilled: { borderColor: colors.orange500, backgroundColor: colors.white },
 });

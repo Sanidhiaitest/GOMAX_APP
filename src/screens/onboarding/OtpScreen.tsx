@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, radius, spacing, typography } from '../../theme';
+import { StatusBar } from 'expo-status-bar';
+import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { OtpInput } from '../../components/OtpInput';
+import { photos } from '../../assets/images';
 import { OnboardingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Otp'>;
 
 const RESEND_SECONDS = 28;
 
+// Node 1:124 — same header gradient as MobileNumber, different photo
 export function OtpScreen({ navigation }: Props) {
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
@@ -33,16 +35,26 @@ export function OtpScreen({ navigation }: Props) {
 
   return (
     <View style={styles.flex}>
-      <LinearGradient colors={[colors.navy900, colors.navy700]} style={styles.header}>
-        <Ionicons name="business" size={72} color="rgba(255,255,255,0.18)" />
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={[colors.black, colors.gradientNavyIndigo]}
+        start={{ x: 0.18, y: 0 }}
+        end={{ x: 0.82, y: 1 }}
+        locations={[0.019, 0.75]}
+        style={styles.header}
+      >
+        {/* PLACEHOLDER: photos.onboardingOtp — see assets/README.md */}
+        {photos.onboardingOtp ? (
+          <Image source={photos.onboardingOtp} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
       </LinearGradient>
 
       <View style={styles.card}>
         <Text style={styles.heading}>GoMax mein</Text>
         <Text style={styles.headingAccent}>Swagat Hai! 👋</Text>
 
-        <View style={{ marginTop: spacing.xxl }}>
-          <Text style={styles.label}>ENTER OTP MANUALLY</Text>
+        <View style={{ marginTop: 32 }}>
+          <Text style={styles.label}>ENTER OTP MAUALLY</Text>
           <View style={{ marginTop: spacing.sm }}>
             <OtpInput value={otp} onChange={setOtp} />
           </View>
@@ -56,8 +68,10 @@ export function OtpScreen({ navigation }: Props) {
         <Button
           label={verifying ? 'Verifying' : 'Verify & Continue'}
           onPress={onSubmit}
-          disabled={!canSubmit}
-          loading={verifying}
+          disabled={!canSubmit && !verifying}
+          variant={verifying ? 'neutralDisabled' : 'primary'}
+          icon={verifying ? null : 'arrow-forward'}
+          roboto
         />
       </View>
     </View>
@@ -65,20 +79,20 @@ export function OtpScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.white },
-  header: { height: 260, alignItems: 'center', justifyContent: 'center' },
+  flex: { flex: 1, backgroundColor: colors.black },
+  header: { height: 360, overflow: 'hidden' },
   card: {
     flex: 1,
     marginTop: -radius.xl,
     backgroundColor: colors.white,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xxl,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
   },
-  heading: { ...typography.h1, color: colors.orange500 },
-  headingAccent: { ...typography.h1, color: colors.textPrimary },
-  label: { ...typography.label, color: colors.textSecondary },
-  resend: { ...typography.caption, color: colors.textSecondary, marginTop: spacing.lg },
+  heading: { ...m3Type.headlineLarge, color: colors.primary700 },
+  headingAccent: { ...m3Type.headlineLarge, color: colors.black },
+  label: { ...m3Type.labelLarge, color: colors.labelGray },
+  resend: { ...m3Type.labelMedium, color: colors.neutral400, marginTop: spacing.lg },
   spacer: { flex: 1 },
 });

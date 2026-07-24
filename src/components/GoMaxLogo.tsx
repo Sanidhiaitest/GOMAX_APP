@@ -1,29 +1,34 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Polygon } from 'react-native-svg';
-import { colors, fontFamily } from '../theme';
+import { Image, ImageStyle, StyleProp } from 'react-native';
+import { brand } from '../assets/images';
 
 type Props = {
-  size?: number;
-  showWordmark?: boolean;
-  wordmarkColor?: string;
+  variant?: 'full-orange' | 'full-navy' | 'mark-orange' | 'mark-navy';
+  width?: number;
+  style?: StyleProp<ImageStyle>;
 };
 
-export function GoMaxLogo({ size = 96, showWordmark = true, wordmarkColor = colors.orange500 }: Props) {
+const SOURCES = {
+  'full-orange': brand.logoFullOrange,
+  'full-navy': brand.logoFullNavy,
+  'mark-orange': brand.markOrange,
+  'mark-navy': brand.markNavy,
+};
+
+const ASPECT_RATIO = {
+  'full-orange': 1200 / 449,
+  'full-navy': 1200 / 257,
+  'mark-orange': 600 / 499,
+  'mark-navy': 600 / 496,
+};
+
+export function GoMaxLogo({ variant = 'mark-orange', width = 120, style }: Props) {
+  const ratio = ASPECT_RATIO[variant];
   return (
-    <View style={styles.wrapper}>
-      <Svg width={size} height={size * 0.9} viewBox="0 0 100 90">
-        <Polygon points="50,4 96,86 4,86" fill={colors.orange500} />
-        <Polygon points="50,4 74,46 26,46" fill={colors.orange100} opacity={0.85} />
-      </Svg>
-      {showWordmark ? (
-        <Text style={[styles.wordmark, { color: wordmarkColor, fontSize: size * 0.34 }]}>GoMax</Text>
-      ) : null}
-    </View>
+    <Image
+      source={SOURCES[variant]}
+      style={[{ width, height: width / ratio }, style]}
+      resizeMode="contain"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  wrapper: { alignItems: 'center', justifyContent: 'center' },
-  wordmark: { fontFamily: fontFamily.headingBold, marginTop: 8 },
-});

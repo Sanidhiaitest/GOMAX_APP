@@ -8,9 +8,9 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '../theme';
+import { colors, fontFamily, radius, spacing, typography } from '../theme';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'whatsapp';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'whatsapp' | 'neutralDisabled';
 
 type Props = {
   label: string;
@@ -18,8 +18,9 @@ type Props = {
   variant?: Variant;
   disabled?: boolean;
   loading?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap | null;
   fullWidth?: boolean;
+  roboto?: boolean;
 };
 
 export function Button({
@@ -30,8 +31,9 @@ export function Button({
   loading,
   icon = 'arrow-forward',
   fullWidth = true,
+  roboto = false,
 }: Props) {
-  const isDisabled = disabled || loading;
+  const isDisabled = disabled || loading || variant === 'neutralDisabled';
 
   return (
     <Pressable
@@ -41,7 +43,7 @@ export function Button({
         styles.base,
         variantStyles[variant],
         fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
+        disabled && variant !== 'neutralDisabled' && styles.disabled,
         pressed && !isDisabled && styles.pressed,
       ]}
     >
@@ -49,12 +51,12 @@ export function Button({
         <ActivityIndicator color={variant === 'secondary' ? colors.orange500 : colors.white} />
       ) : (
         <View style={styles.content}>
-          <Text style={[styles.label, labelStyles[variant]]}>{label}</Text>
+          <Text style={[styles.label, roboto && styles.labelRoboto, labelStyles[variant]]}>{label}</Text>
           {icon ? (
             <Ionicons
               name={icon}
               size={18}
-              color={variant === 'secondary' ? colors.orange500 : colors.white}
+              color={variant === 'secondary' ? colors.orange500 : variant === 'neutralDisabled' ? colors.neutral950 : colors.white}
             />
           ) : null}
         </View>
@@ -65,8 +67,9 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.md,
-    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
+    minHeight: 56,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -74,6 +77,7 @@ const styles = StyleSheet.create({
   fullWidth: { width: '100%' },
   content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   label: { ...typography.button },
+  labelRoboto: { fontFamily: fontFamily.robotoMedium },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
 });
@@ -83,6 +87,7 @@ const variantStyles = StyleSheet.create({
   secondary: { backgroundColor: colors.orange50, borderWidth: 1, borderColor: colors.orange500 },
   ghost: { backgroundColor: 'transparent' },
   whatsapp: { backgroundColor: colors.whatsapp },
+  neutralDisabled: { backgroundColor: 'rgba(29,27,32,0.1)' },
 });
 
 const labelStyles = StyleSheet.create({
@@ -90,4 +95,5 @@ const labelStyles = StyleSheet.create({
   secondary: { color: colors.orange600 },
   ghost: { color: colors.textPrimary },
   whatsapp: { color: colors.white },
+  neutralDisabled: { color: 'rgba(29,27,32,0.38)' },
 });

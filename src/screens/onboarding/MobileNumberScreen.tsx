@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, radius, spacing, typography } from '../../theme';
+import { StatusBar } from 'expo-status-bar';
+import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { useApp } from '../../state/AppContext';
+import { photos } from '../../assets/images';
 import { OnboardingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'MobileNumber'>;
 
-// NOTE: header uses a gradient placeholder instead of the construction-site
-// photography from Figma — swap in real photo assets once exported.
+// Node 1:101 — header gradient: linear-gradient(159.8deg, #000000 1.89%, #041F61 74.93%)
 export function MobileNumberScreen({ navigation }: Props) {
   const { setMobileNumber } = useApp();
   const [phone, setPhone] = useState('');
@@ -26,17 +26,27 @@ export function MobileNumberScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <LinearGradient colors={[colors.navy900, colors.navy700]} style={styles.header}>
-        <Ionicons name="business" size={72} color="rgba(255,255,255,0.18)" />
+      <StatusBar style="light" />
+      <LinearGradient
+        colors={[colors.black, colors.gradientNavyIndigo]}
+        start={{ x: 0.18, y: 0 }}
+        end={{ x: 0.82, y: 1 }}
+        locations={[0.019, 0.75]}
+        style={styles.header}
+      >
+        {/* PLACEHOLDER: photos.onboardingMobileNumber — see assets/README.md */}
+        {photos.onboardingMobileNumber ? (
+          <Image source={photos.onboardingMobileNumber} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
       </LinearGradient>
 
       <View style={styles.card}>
         <Text style={styles.heading}>GoMax mein</Text>
         <Text style={styles.headingAccent}>Swagat Hai! 👋</Text>
 
-        <View style={{ marginTop: spacing.xxl }}>
+        <View style={{ marginTop: 32 }}>
           <TextField
-            label="Mobile Number"
+            label="MOBILE NUMBER"
             prefix="🇮🇳 +91"
             placeholder="XXXXX-XXXXX"
             keyboardType="number-pad"
@@ -48,7 +58,7 @@ export function MobileNumberScreen({ navigation }: Props) {
 
         <View style={styles.spacer} />
 
-        <Button label="OTP Bhejo" onPress={onSubmit} disabled={!canSubmit} />
+        <Button label="OTP Bhejo" onPress={onSubmit} disabled={!canSubmit} roboto />
 
         <Text style={styles.terms}>
           Join karke aap <Text style={styles.termsLink}>Terms & Conditions</Text> se agree karte hain
@@ -59,24 +69,20 @@ export function MobileNumberScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.white },
-  header: {
-    height: 260,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  flex: { flex: 1, backgroundColor: colors.black },
+  header: { height: 360, overflow: 'hidden' },
   card: {
     flex: 1,
     marginTop: -radius.xl,
     backgroundColor: colors.white,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    paddingHorizontal: spacing.xxl,
+    paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
   },
-  heading: { ...typography.h1, color: colors.orange500 },
-  headingAccent: { ...typography.h1, color: colors.textPrimary },
+  heading: { ...m3Type.headlineLarge, color: colors.primary700 },
+  headingAccent: { ...m3Type.headlineLarge, color: colors.black },
   spacer: { flex: 1 },
-  terms: { ...typography.caption, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },
-  termsLink: { color: colors.orange500, fontWeight: '600' },
+  terms: { ...m3Type.labelSmall, color: colors.black, textAlign: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },
+  termsLink: { color: colors.primary700 },
 });

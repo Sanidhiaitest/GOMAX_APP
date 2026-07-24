@@ -1,35 +1,75 @@
-// GoMax design language, approximated from the Figma file reviewed with the client.
-// TODO: replace approximated hex values with exact Figma variable exports once
-// design tokens are shared (Figma connector was disconnected mid-project).
+// Exact brand/UI values pulled from the GoMax Figma file's variables and
+// get_design_context (fileKey FeJTlIYATbYbRX82aBY17w) — do not approximate;
+// if a new screen needs a color not listed here, pull it from Figma.
 export const colors = {
-  navy900: '#0B1A33',
-  navy800: '#0F2247',
-  navy700: '#14294F',
-  navy600: '#1C3560',
+  // --- Brand (from the client's logo artwork) ---
+  brandNavy: '#001E42',
+  brandOrange: '#F3987A',
 
-  orange500: '#DD6B3F',
-  orange600: '#C85A31',
-  orange100: '#FBE7DD',
-  orange50: '#FDF3EE',
+  // --- M3 "Primary" scale (buttons, links, accents) ---
+  primary700: '#c05336',
+  primary600: '#e07554',
+  primary50: '#fff8f5',
+
+  // --- M3 "Secondary" scale (headings, step indicators) ---
+  secondary800: '#0a1c37',
+  secondary700: '#0f2a4e',
+  secondary500: '#1e508c',
+  secondary50: '#f0f4fa',
+
+  // --- M3 "Neutral" scale ---
+  neutral0: '#ffffff',
+  neutral200: '#e4e4e7',
+  neutral300: '#d4d4d8',
+  neutral400: '#a1a1aa',
+  neutral500: '#71717a',
+  neutral600: '#52525b',
+  neutral950: '#09090b',
+
+  // --- Raw one-off hex used directly in the design (not Figma variables) ---
+  labelGray: '#808080',
+  inputBorder: '#e0e0e0',
+  inputPrefixBg: '#ededed',
+  skipGray: '#595c5d',
+  gradientNavyDeep: '#002040', // splash + scan gradient stop
+  gradientNavyIndigo: '#041F61', // mobile number / otp header gradient stop
+
+  // --- Dark "Light/Neutral" collection used on Scan + Wallet ---
+  darkNeutral700: '#474D6A',
+  darkNeutral800: '#121224',
+
+  // --- Scan/Wallet screen-specific (Inter-typeset dark UI) ---
+  walletBg: '#0a1628',
+  walletCard: '#0d1f3c',
+  walletPointsAccent: '#c1440e',
+  walletRunsAccent: '#2a8fa8',
+  scanSubmitOrange: '#cf4b29',
+  scanHintBlue: '#2e5475',
+
+  // --- Generic semantic aliases used by shared components (Home/Profile/KYC/
+  // Products/Dealer/Salesman — screens with no exact Figma reference) ---
+  navy900: '#0a1c37',
+  navy800: '#0f2a4e',
+  navy700: '#1e508c',
+  orange500: '#c05336',
+  orange600: '#a8442a',
+  orange100: '#fbe7dd',
+  orange50: '#fff8f5',
+  textPrimary: '#131B2E',
+  textSecondary: '#71717a',
+  textMuted: '#a1a1aa',
+  textInverse: '#FFFFFF',
+  surface: '#FFFFFF',
+  surfaceMuted: '#F4F5F7',
+  border: '#e4e4e7',
+  borderFocus: '#c05336',
 
   white: '#FFFFFF',
   black: '#0A0A0A',
-
-  textPrimary: '#131B2E',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  textInverse: '#FFFFFF',
-
-  surface: '#FFFFFF',
-  surfaceMuted: '#F4F5F7',
-  border: '#E5E7EB',
-  borderFocus: '#DD6B3F',
-
   success: '#1FA855',
   whatsapp: '#25D366',
   danger: '#DC2626',
   warning: '#D97706',
-
   overlay: 'rgba(11, 26, 51, 0.6)',
 } as const;
 

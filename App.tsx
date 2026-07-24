@@ -14,7 +14,15 @@ import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
+  Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import {
+  useFonts as useRoboto,
+  Roboto_400Regular,
+  Roboto_500Medium,
+  Roboto_600SemiBold,
+  Roboto_700Bold,
+} from '@expo-google-fonts/roboto';
 import { colors } from './src/theme';
 import { AppProvider } from './src/state/AppContext';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -22,12 +30,13 @@ import { GoMaxLogo } from './src/components/GoMaxLogo';
 
 export default function App() {
   const [poppinsLoaded] = usePoppins({ Poppins_600SemiBold, Poppins_700Bold });
-  const [interLoaded] = useInter({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold });
+  const [interLoaded] = useInter({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold });
+  const [robotoLoaded] = useRoboto({ Roboto_400Regular, Roboto_500Medium, Roboto_600SemiBold, Roboto_700Bold });
 
-  if (!poppinsLoaded || !interLoaded) {
+  if (!poppinsLoaded || !interLoaded || !robotoLoaded) {
     return (
       <View style={styles.loading}>
-        <GoMaxLogo size={96} />
+        <GoMaxLogo variant="full-orange" width={180} />
       </View>
     );
   }
@@ -37,7 +46,7 @@ export default function App() {
       <SafeAreaProvider>
         <AppProvider>
           <NavigationContainer>
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <RootNavigator />
           </NavigationContainer>
         </AppProvider>
