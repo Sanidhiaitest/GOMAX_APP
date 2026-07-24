@@ -5,16 +5,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
 import { dealerLedger, recentOrders, scanNotifications, OrderStatus } from '../../data/dealerMock';
 import { RootStackParamList } from '../../navigation/types';
 
-const STATUS_COLOR: Record<OrderStatus, string> = {
-  Placed: colors.textSecondary,
-  Billed: colors.warning,
-  'In transit': colors.navy700,
-  Delivered: colors.success,
+const STATUS_META: Record<OrderStatus, { tone: 'neutral' | 'warning' | 'info' | 'success'; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }> = {
+  Placed: { tone: 'neutral', icon: 'ellipse-outline' },
+  Billed: { tone: 'warning', icon: 'receipt-outline' },
+  'In transit': { tone: 'info', icon: 'car-outline' },
+  Delivered: { tone: 'success', icon: 'checkmark-circle' },
 };
 
 export function DealerHomeScreen() {
@@ -32,10 +33,14 @@ export function DealerHomeScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {dealerVerificationStatus === 'pending' ? (
           <Card style={styles.verificationBanner}>
-            <Ionicons name="time-outline" size={22} color={colors.orange600} />
-            <Text style={styles.verificationText}>
-              Verification pending — your salesman will visit to confirm details and set up your credit line.
-            </Text>
+            <View style={styles.verificationIcon}>
+              <Ionicons name="time-outline" size={20} color={colors.orange600} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.verificationTitle}>Verification pending</Text>
+              <Text style={styles.verificationText}>Salesman visit required</Text>
+            </View>
+            <Pill label="Pending" tone="warning" icon="hourglass-outline" size="sm" />
           </Card>
         ) : null}
 
@@ -91,7 +96,7 @@ export function DealerHomeScreen() {
                   <Text style={styles.orderDate}>{o.date}</Text>
                 </View>
                 <Text style={styles.orderAmount}>₹{o.amount.toLocaleString('en-IN')}</Text>
-                <Text style={[styles.orderStatus, { color: STATUS_COLOR[o.status] }]}>{o.status}</Text>
+                <Pill label={o.status} tone={STATUS_META[o.status].tone} icon={STATUS_META[o.status].icon} size="sm" />
               </Card>
             </Pressable>
           ))}
@@ -119,7 +124,16 @@ const styles = StyleSheet.create({
   ledgerBarFill: { height: '100%', backgroundColor: colors.orange500 },
   ledgerHint: { ...typography.caption, color: 'rgba(255,255,255,0.7)', marginTop: spacing.sm },
   verificationBanner: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.orange50, borderColor: colors.orange100 },
-  verificationText: { flex: 1, ...typography.caption, color: colors.orange600 },
+  verificationIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verificationTitle: { ...typography.bodyMedium, color: colors.textPrimary },
+  verificationText: { ...typography.caption, color: colors.orange600, marginTop: 1 },
   newOrderCta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,5 +163,4 @@ const styles = StyleSheet.create({
   orderNo: { ...typography.bodyMedium, color: colors.textPrimary },
   orderDate: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   orderAmount: { ...typography.bodyMedium, color: colors.textPrimary, marginRight: spacing.sm },
-  orderStatus: { ...typography.caption, fontWeight: '600' },
 });

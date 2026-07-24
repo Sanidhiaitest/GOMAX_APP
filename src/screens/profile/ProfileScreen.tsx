@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
 import { RootStackParamList } from '../../navigation/types';
@@ -15,10 +16,10 @@ const ROLE_LABEL: Record<string, string> = {
   salesman: 'Salesman',
 };
 
-const KYC_LABEL: Record<string, { label: string; color: string }> = {
-  unverified: { label: 'Not verified', color: colors.textSecondary },
-  pending: { label: 'Under review', color: colors.warning },
-  verified: { label: 'Verified', color: colors.success },
+const KYC_LABEL: Record<string, { label: string; tone: 'neutral' | 'warning' | 'success' }> = {
+  unverified: { label: 'Not verified', tone: 'neutral' },
+  pending: { label: 'Under review', tone: 'warning' },
+  verified: { label: 'Verified', tone: 'success' },
 };
 
 export function ProfileScreen() {
@@ -38,7 +39,15 @@ export function ProfileScreen() {
   } = useApp();
   const kyc = KYC_LABEL[kycStatus];
 
-  const rows: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; onPress?: () => void }[] = [
+  type Row = {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    value: string;
+    onPress?: () => void;
+    pillTone?: 'neutral' | 'warning' | 'success';
+  };
+
+  const rows: Row[] = [
     { icon: 'call-outline', label: 'Mobile number', value: mobileNumber ? `+91 ${mobileNumber}` : '—' },
   ];
 
@@ -50,6 +59,7 @@ export function ProfileScreen() {
         icon: 'checkmark-done-outline',
         label: 'Verification status',
         value: dealerVerificationStatus === 'verified' ? 'Verified' : 'Pending',
+        pillTone: dealerVerificationStatus === 'verified' ? 'success' : 'warning',
       }
     );
   } else if (role === 'salesman') {
@@ -63,6 +73,7 @@ export function ProfileScreen() {
         label: 'KYC status',
         value: kyc.label,
         onPress: () => navigation.navigate('Kyc'),
+        pillTone: kyc.tone,
       }
     );
   }
@@ -92,9 +103,13 @@ export function ProfileScreen() {
               <Ionicons name={row.icon} size={20} color={colors.textSecondary} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowLabel}>{row.label}</Text>
-                <Text style={[styles.rowValue, row.label === 'KYC status' && { color: kyc.color }]}>
-                  {row.value}
-                </Text>
+                {row.pillTone ? (
+                  <View style={{ marginTop: 4 }}>
+                    <Pill label={row.value} tone={row.pillTone} size="sm" />
+                  </View>
+                ) : (
+                  <Text style={styles.rowValue}>{row.value}</Text>
+                )}
               </View>
               {row.onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
             </Pressable>

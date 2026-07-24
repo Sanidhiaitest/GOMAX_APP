@@ -5,15 +5,16 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
 import { beatPlan, salesmanTarget, streak, BeatStop } from '../../data/salesmanMock';
 import { RootStackParamList } from '../../navigation/types';
 
-const STATUS_META: Record<BeatStop['status'], { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  visited: { label: 'Visited', color: colors.success, icon: 'checkmark-circle' },
-  pending: { label: 'Pending', color: colors.warning, icon: 'time-outline' },
-  skipped: { label: 'Skipped', color: colors.textMuted, icon: 'close-circle-outline' },
+const STATUS_META: Record<BeatStop['status'], { label: string; tone: 'success' | 'warning' | 'neutral'; icon: keyof typeof Ionicons.glyphMap }> = {
+  visited: { label: 'Visited', tone: 'success', icon: 'checkmark-circle' },
+  pending: { label: 'Pending', tone: 'warning', icon: 'time-outline' },
+  skipped: { label: 'Skipped', tone: 'neutral', icon: 'close-circle-outline' },
 };
 
 const QUICK_ACTIONS: { key: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -79,13 +80,12 @@ export function SalesmanHomeScreen() {
             return (
               <Pressable key={stop.id} onPress={() => navigation.navigate('DealerDetail', { dealerId: stop.id })}>
                 <Card style={styles.stopRow}>
-                  <Ionicons name={meta.icon} size={22} color={meta.color} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.stopName}>{stop.dealerName}</Text>
                     <Text style={styles.stopArea}>{stop.area}</Text>
                   </View>
                   <View style={styles.stopRight}>
-                    <Text style={[styles.stopStatus, { color: meta.color }]}>{meta.label}</Text>
+                    <Pill label={meta.label} tone={meta.tone} icon={meta.icon} size="sm" />
                     {stop.outstanding > 0 ? (
                       <Text style={styles.stopOutstanding}>₹{stop.outstanding.toLocaleString('en-IN')} due</Text>
                     ) : null}
@@ -147,7 +147,6 @@ const styles = StyleSheet.create({
   stopRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   stopName: { ...typography.bodyMedium, color: colors.textPrimary },
   stopArea: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  stopRight: { alignItems: 'flex-end' },
-  stopStatus: { ...typography.caption, fontWeight: '600' },
-  stopOutstanding: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  stopRight: { alignItems: 'flex-end', gap: 4 },
+  stopOutstanding: { ...typography.caption, color: colors.textMuted },
 });

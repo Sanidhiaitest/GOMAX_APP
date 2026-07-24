@@ -6,12 +6,20 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { SelectModal } from '../../components/SelectModal';
 import { beatPlan, DcrEntry, todaysDcrEntries } from '../../data/salesmanMock';
 import { RootStackParamList } from '../../navigation/types';
 
 const OUTCOMES: DcrEntry['outcome'][] = ['Order taken', 'Payment collected', 'No order', 'Dealer closed'];
+
+const OUTCOME_META: Record<DcrEntry['outcome'], { tone: 'success' | 'info' | 'neutral' | 'danger'; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }> = {
+  'Order taken': { tone: 'success', icon: 'receipt-outline' },
+  'Payment collected': { tone: 'info', icon: 'cash-outline' },
+  'No order': { tone: 'neutral', icon: 'remove-circle-outline' },
+  'Dealer closed': { tone: 'danger', icon: 'close-circle-outline' },
+};
 
 export function DcrScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -90,7 +98,9 @@ export function DcrScreen() {
                   <Text style={styles.entryDealer}>{entry.dealerName}</Text>
                   <Text style={styles.entryTime}>{entry.time}</Text>
                 </View>
-                <Text style={styles.entryOutcome}>{entry.outcome}</Text>
+                <View style={{ marginTop: 4, marginBottom: entry.notes ? 4 : 0 }}>
+                  <Pill label={entry.outcome} tone={OUTCOME_META[entry.outcome].tone} icon={OUTCOME_META[entry.outcome].icon} size="sm" />
+                </View>
                 {entry.notes ? <Text style={styles.entryNotes}>{entry.notes}</Text> : null}
               </Card>
             ))}
@@ -154,7 +164,6 @@ const styles = StyleSheet.create({
   entryHeaderRow: { flexDirection: 'row', justifyContent: 'space-between' },
   entryDealer: { ...m3Type.titleMedium, fontSize: 15, color: colors.textPrimary },
   entryTime: { ...m3Type.labelMedium, color: colors.neutral500 },
-  entryOutcome: { ...m3Type.labelLarge, fontSize: 13, color: colors.primary700, fontWeight: '600', marginTop: 4 },
   entryNotes: { ...m3Type.labelLarge, fontSize: 13, color: colors.neutral500, marginTop: 4 },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxl },
   emptyText: { ...m3Type.labelLarge, color: colors.neutral400 },

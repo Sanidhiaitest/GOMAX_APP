@@ -5,16 +5,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Kyc'>;
 
-const STATUS_COPY: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  unverified: { label: 'Not verified', color: colors.textSecondary, icon: 'alert-circle-outline' },
-  pending: { label: 'Under review', color: colors.warning, icon: 'time-outline' },
-  verified: { label: 'Verified', color: colors.success, icon: 'checkmark-circle' },
+const STATUS_COPY: Record<string, { label: string; tone: 'neutral' | 'warning' | 'success'; icon: keyof typeof Ionicons.glyphMap }> = {
+  unverified: { label: 'Not verified', tone: 'neutral', icon: 'alert-circle-outline' },
+  pending: { label: 'Under review', tone: 'warning', icon: 'time-outline' },
+  verified: { label: 'Verified', tone: 'success', icon: 'checkmark-circle' },
 };
 
 const STEPS = [
@@ -49,11 +50,10 @@ export function KycScreen({ navigation }: Props) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <Card style={styles.statusCard}>
-          <Ionicons name={status.icon} size={28} color={status.color} />
           <View style={{ flex: 1 }}>
             <Text style={styles.statusLabel}>KYC Status</Text>
-            <Text style={[styles.statusValue, { color: status.color }]}>{status.label}</Text>
           </View>
+          <Pill label={status.label} tone={status.tone} icon={status.icon} />
         </Card>
 
         <Text style={styles.explainer}>
@@ -105,7 +105,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.xxl, gap: spacing.xl, paddingBottom: spacing.xxxl },
   statusCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   statusLabel: { ...typography.label, color: colors.textSecondary, textTransform: 'uppercase' },
-  statusValue: { ...typography.h3, marginTop: 2 },
   explainer: { ...typography.caption, color: colors.textSecondary },
   steps: { gap: spacing.lg },
   step: { flexDirection: 'row', gap: spacing.lg, alignItems: 'flex-start' },
