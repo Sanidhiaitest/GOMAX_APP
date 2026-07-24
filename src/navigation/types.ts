@@ -25,6 +25,10 @@ export type RootStackParamList = {
   Referral: undefined;
   ScratchCards: undefined;
   Challenges: undefined;
+  OrdersList: undefined;
+  OrderDetail: { orderId: string };
+  Ledger: undefined;
+  OrderPlacement: undefined;
 };
 
 declare global {

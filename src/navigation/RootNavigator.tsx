@@ -8,6 +8,10 @@ import { SpinWheelScreen } from '../screens/engagement/SpinWheelScreen';
 import { ReferralScreen } from '../screens/engagement/ReferralScreen';
 import { ScratchCardScreen } from '../screens/engagement/ScratchCardScreen';
 import { ChallengesScreen } from '../screens/engagement/ChallengesScreen';
+import { OrdersListScreen } from '../screens/dealer/OrdersListScreen';
+import { OrderDetailScreen } from '../screens/dealer/OrderDetailScreen';
+import { LedgerScreen } from '../screens/dealer/LedgerScreen';
+import { OrderPlacementScreen } from '../screens/dealer/OrderPlacementScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -21,6 +25,10 @@ export function RootNavigator() {
       <Stack.Screen name="Referral" component={ReferralScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="ScratchCards" component={ScratchCardScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="OrdersList" component={OrdersListScreen} />
+      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+      <Stack.Screen name="Ledger" component={LedgerScreen} />
+      <Stack.Screen name="OrderPlacement" component={OrderPlacementScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

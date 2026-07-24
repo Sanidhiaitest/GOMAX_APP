@@ -1,19 +1,24 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
-import { dealerLedger, recentOrders, scanNotifications } from '../../data/dealerMock';
+import { dealerLedger, recentOrders, scanNotifications, OrderStatus } from '../../data/dealerMock';
+import { RootStackParamList } from '../../navigation/types';
 
-const STATUS_COLOR: Record<string, string> = {
+const STATUS_COLOR: Record<OrderStatus, string> = {
+  Placed: colors.textSecondary,
+  Billed: colors.warning,
+  'In transit': colors.navy700,
   Delivered: colors.success,
-  'In transit': colors.warning,
-  Billed: colors.textSecondary,
 };
 
 export function DealerHomeScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { fullName, city } = useApp();
   const utilisation = Math.round((dealerLedger.outstanding / dealerLedger.creditLimit) * 100);
 
@@ -25,20 +30,26 @@ export function DealerHomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Card style={styles.ledgerCard}>
-          <Text style={styles.ledgerLabel}>OUTSTANDING BALANCE</Text>
-          <Text style={styles.ledgerValue}>₹{dealerLedger.outstanding.toLocaleString('en-IN')}</Text>
-          <View style={styles.ledgerBarTrack}>
-            <View style={[styles.ledgerBarFill, { width: `${utilisation}%` }]} />
-          </View>
-          <Text style={styles.ledgerHint}>
-            {utilisation}% of ₹{dealerLedger.creditLimit.toLocaleString('en-IN')} limit used · Due {dealerLedger.dueDate}
-          </Text>
-        </Card>
+        <Pressable onPress={() => navigation.navigate('Ledger')}>
+          <Card style={styles.ledgerCard}>
+            <Text style={styles.ledgerLabel}>OUTSTANDING BALANCE</Text>
+            <Text style={styles.ledgerValue}>₹{dealerLedger.outstanding.toLocaleString('en-IN')}</Text>
+            <View style={styles.ledgerBarTrack}>
+              <View style={[styles.ledgerBarFill, { width: `${utilisation}%` }]} />
+            </View>
+            <Text style={styles.ledgerHint}>
+              {utilisation}% of ₹{dealerLedger.creditLimit.toLocaleString('en-IN')} limit used · Due {dealerLedger.dueDate}
+            </Text>
+          </Card>
+        </Pressable>
+
+        <Pressable style={styles.newOrderCta} onPress={() => navigation.navigate('OrderPlacement')}>
+          <Ionicons name="add-circle-outline" size={22} color={colors.white} />
+          <Text style={styles.newOrderCtaText}>Place New Order</Text>
+        </Pressable>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Scan notifications</Text>
-          <Text style={styles.sectionLink}>See all</Text>
         </View>
         <View style={{ gap: spacing.md }}>
           {scanNotifications.map((n) => (
@@ -58,18 +69,22 @@ export function DealerHomeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent orders</Text>
-          <Text style={styles.sectionLink}>See all</Text>
+          <Pressable onPress={() => navigation.navigate('OrdersList')}>
+            <Text style={styles.sectionLink}>See all</Text>
+          </Pressable>
         </View>
         <View style={{ gap: spacing.md }}>
-          {recentOrders.map((o) => (
-            <Card key={o.id} style={styles.orderRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.orderNo}>{o.orderNo}</Text>
-                <Text style={styles.orderDate}>{o.date}</Text>
-              </View>
-              <Text style={styles.orderAmount}>₹{o.amount.toLocaleString('en-IN')}</Text>
-              <Text style={[styles.orderStatus, { color: STATUS_COLOR[o.status] }]}>{o.status}</Text>
-            </Card>
+          {recentOrders.slice(0, 3).map((o) => (
+            <Pressable key={o.id} onPress={() => navigation.navigate('OrderDetail', { orderId: o.id })}>
+              <Card style={styles.orderRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.orderNo}>{o.orderNo}</Text>
+                  <Text style={styles.orderDate}>{o.date}</Text>
+                </View>
+                <Text style={styles.orderAmount}>₹{o.amount.toLocaleString('en-IN')}</Text>
+                <Text style={[styles.orderStatus, { color: STATUS_COLOR[o.status] }]}>{o.status}</Text>
+              </Card>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
@@ -94,6 +109,16 @@ const styles = StyleSheet.create({
   },
   ledgerBarFill: { height: '100%', backgroundColor: colors.orange500 },
   ledgerHint: { ...typography.caption, color: 'rgba(255,255,255,0.7)', marginTop: spacing.sm },
+  newOrderCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.orange500,
+    borderRadius: radius.md,
+    paddingVertical: spacing.lg,
+  },
+  newOrderCtaText: { ...typography.button, color: colors.white },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm },
   sectionTitle: { ...typography.h3, color: colors.textPrimary },
   sectionLink: { ...typography.caption, color: colors.orange500 },
