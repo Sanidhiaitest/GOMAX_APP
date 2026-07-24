@@ -15,10 +15,15 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Ledger: 'wallet-outline',
   Dealers: 'people-outline',
   Dcr: 'document-text-outline',
+  Dashboard: 'grid-outline',
+  DealerApprovals: 'storefront-outline',
+  Redemptions: 'cash-outline',
+  Applicators: 'people-outline',
 };
 
 const LABELS: Record<string, string> = {
   Dcr: 'Reports',
+  DealerApprovals: 'Dealers',
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {

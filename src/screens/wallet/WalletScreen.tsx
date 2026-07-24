@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
-import { useApp } from '../../state/AppContext';
+import { useApp, REDEMPTION_AUTO_APPROVE_CEILING } from '../../state/AppContext';
 
 const QUICK_AMOUNTS = [200, 500, 1000];
 
@@ -14,7 +14,7 @@ const QUICK_AMOUNTS = [200, 500, 1000];
 // verbatim from the design; the PRD's ₹50/4hr-SLA rules are applied silently
 // via MIN_REDEMPTION_POINTS/AUTO_APPROVE_CEILING without changing the visible text.
 const MIN_REDEMPTION_POINTS = 50;
-const AUTO_APPROVE_CEILING = 200;
+const AUTO_APPROVE_CEILING = REDEMPTION_AUTO_APPROVE_CEILING;
 
 export function WalletScreen() {
   const { points, runs, redeemPoints } = useApp();
@@ -27,7 +27,7 @@ export function WalletScreen() {
   const canSubmit = isValidUpi && amount >= MIN_REDEMPTION_POINTS && amount <= points;
 
   const onSubmit = () => {
-    redeemPoints(amount);
+    redeemPoints(amount, upiId);
     setSuccess(true);
     setSelectedAmount(null);
   };

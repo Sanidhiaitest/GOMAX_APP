@@ -35,6 +35,13 @@ export type SalesmanTabParamList = {
   Profile: undefined;
 };
 
+export type AdminTabParamList = {
+  Dashboard: undefined;
+  DealerApprovals: undefined;
+  Redemptions: undefined;
+  Applicators: undefined;
+};
+
 export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
@@ -50,6 +57,8 @@ export type RootStackParamList = {
   DealerDetail: { dealerId: string };
   Dcr: undefined;
   DealersList: undefined;
+  AdminLogin: undefined;
+  AdminMain: undefined;
 };
 
 declare global {

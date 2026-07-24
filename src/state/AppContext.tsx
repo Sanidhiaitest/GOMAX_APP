@@ -21,6 +21,23 @@ export type DealerBusinessDetails = {
   hasShopPhoto: boolean;
 };
 
+export type RedemptionStatus = 'pending' | 'approved' | 'rejected';
+
+export type RedemptionRequest = {
+  id: string;
+  applicantName: string;
+  amount: number;
+  upiId: string;
+  status: RedemptionStatus;
+  requestedAt: string;
+};
+
+// PRD rule: under 200 pts auto-approves instantly; 200+ needs admin review
+// within a 4h SLA — this constant is shared between the Wallet screen (which
+// decides what to show the user) and the Admin queue (which decides what
+// needs a human).
+export const REDEMPTION_AUTO_APPROVE_CEILING = 200;
+
 type AppState = {
   isAuthenticated: boolean;
   onboardingComplete: boolean;
@@ -37,6 +54,8 @@ type AppState = {
   dealerBusiness: DealerBusinessDetails;
   dealerVerificationStatus: DealerVerificationStatus;
   employeeCode: string;
+  redemptionRequests: RedemptionRequest[];
+  isAdminAuthenticated: boolean;
 };
 
 type AppContextValue = AppState & {
@@ -48,8 +67,12 @@ type AppContextValue = AppState & {
   completeOnboarding: () => void;
   setKycStatus: (s: KycStatus) => void;
   addScan: (activity: Omit<ScanActivity, 'id' | 'scannedAt'>) => void;
-  redeemPoints: (amount: number) => void;
+  redeemPoints: (amount: number, upiId: string) => void;
   addRuns: (amount: number) => void;
+  approveDealerVerification: () => void;
+  decideRedemption: (id: string, decision: 'approved' | 'rejected') => void;
+  adminLogin: () => void;
+  adminLogout: () => void;
   logout: () => void;
 };
 
@@ -72,6 +95,8 @@ const initialState: AppState = {
   dealerBusiness: { shopName: '', gstNumber: '', address: '', bankUpi: '', hasShopPhoto: false },
   dealerVerificationStatus: 'pending',
   employeeCode: '',
+  redemptionRequests: [],
+  isAdminAuthenticated: false,
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -98,8 +123,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...s.scanHistory,
           ],
         })),
-      redeemPoints: (amount) => setState((s) => ({ ...s, points: Math.max(0, s.points - amount) })),
+      redeemPoints: (amount, upiId) =>
+        setState((s) => {
+          const autoApproved = amount < REDEMPTION_AUTO_APPROVE_CEILING;
+          const request: RedemptionRequest = {
+            id: String(Date.now()),
+            applicantName: s.fullName || 'GoMax User',
+            amount,
+            upiId,
+            status: autoApproved ? 'approved' : 'pending',
+            requestedAt: 'Just now',
+          };
+          return {
+            ...s,
+            points: Math.max(0, s.points - amount),
+            redemptionRequests: [request, ...s.redemptionRequests],
+          };
+        }),
       addRuns: (amount) => setState((s) => ({ ...s, runs: s.runs + amount })),
+      approveDealerVerification: () => setState((s) => ({ ...s, dealerVerificationStatus: 'verified' })),
+      decideRedemption: (id, decision) =>
+        setState((s) => ({
+          ...s,
+          redemptionRequests: s.redemptionRequests.map((r) => (r.id === id ? { ...r, status: decision } : r)),
+        })),
+      adminLogin: () => setState((s) => ({ ...s, isAdminAuthenticated: true })),
+      adminLogout: () => setState((s) => ({ ...s, isAdminAuthenticated: false })),
       logout: () => setState(initialState),
     }),
     [state]
