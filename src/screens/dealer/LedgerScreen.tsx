@@ -87,6 +87,6 @@ const styles = StyleSheet.create({
   rowLabel: { ...m3Type.titleMedium, fontSize: 14, color: colors.textPrimary },
   rowDate: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500, marginTop: 2 },
   rowAmount: { ...m3Type.titleMediumSemiBold, fontSize: 14 },
-  creditText: { color: colors.success },
+  creditText: { color: colors.successText },
   debitText: { color: colors.danger },
 });

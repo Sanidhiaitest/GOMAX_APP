@@ -71,6 +71,14 @@ export const colors = {
   danger: '#DC2626',
   warning: '#D97706',
   overlay: 'rgba(11, 26, 51, 0.6)',
+
+  // --- AA-contrast text/icon variants of success/warning/danger, for use
+  // whenever those semantic colors sit ON TOP of a light tint or white
+  // (the base success/warning/danger above read as ~2.8-4.2:1 there, below
+  // the 4.5:1 WCAG AA text minimum; these hold the same hue at ~4.9-5.6:1) ---
+  successText: '#137a3d',
+  warningText: '#a3540a',
+  dangerText: '#b91c1c',
 } as const;
 
 export type Colors = typeof colors;

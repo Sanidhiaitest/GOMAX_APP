@@ -181,5 +181,5 @@ const styles = StyleSheet.create({
   },
   activityTitle: { ...typography.bodyMedium, color: colors.textPrimary },
   activityTime: { ...typography.caption, color: colors.textSecondary },
-  activityPoints: { ...typography.bodyMedium, color: colors.success },
+  activityPoints: { ...typography.bodyMedium, color: colors.successText },
 });

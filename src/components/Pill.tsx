@@ -12,12 +12,15 @@ type Props = {
   size?: 'sm' | 'md';
 };
 
+// Every fg here holds >=4.5:1 contrast against its own bg (WCAG AA for text),
+// verified against the actual hex values — not the raw success/warning/danger/
+// primary700/neutral500 tokens, which read as low as 2.8:1 on these tints.
 const TONE_STYLES: Record<Tone, { bg: string; fg: string }> = {
-  success: { bg: '#e6f7ec', fg: colors.success },
-  warning: { bg: '#fff4e0', fg: colors.warning },
-  danger: { bg: '#fdeaea', fg: colors.danger },
-  neutral: { bg: colors.surfaceMuted, fg: colors.neutral500 },
-  primary: { bg: colors.primary50, fg: colors.primary700 },
+  success: { bg: '#e6f7ec', fg: colors.successText },
+  warning: { bg: '#fff4e0', fg: colors.warningText },
+  danger: { bg: '#fdeaea', fg: colors.dangerText },
+  neutral: { bg: colors.surfaceMuted, fg: colors.neutral600 },
+  primary: { bg: colors.primary50, fg: colors.orange600 },
   info: { bg: '#eaf1fb', fg: colors.secondary500 },
 };
 
