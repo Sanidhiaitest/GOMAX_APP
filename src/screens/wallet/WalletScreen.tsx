@@ -5,9 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
+import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { RewardBurst, UnlockReveal } from '../../components/animations';
-import { useApp, REDEMPTION_AUTO_APPROVE_CEILING } from '../../state/AppContext';
+import { useApp, REDEMPTION_AUTO_APPROVE_CEILING, RedemptionStatus } from '../../state/AppContext';
 import { successHaptic } from '../../utils/haptics';
 
 const QUICK_AMOUNTS = [200, 500, 1000];
@@ -18,8 +19,27 @@ const QUICK_AMOUNTS = [200, 500, 1000];
 const MIN_REDEMPTION_POINTS = 50;
 const AUTO_APPROVE_CEILING = REDEMPTION_AUTO_APPROVE_CEILING;
 
+// Mirrors the OrdersListScreen STATUS_META idiom: one lookup from state to
+// {tone, icon, label} so every redemption status renders as a Pill instead
+// of plain text anywhere in the app.
+const REDEMPTION_STATUS_META: Record<
+  RedemptionStatus,
+  { tone: 'warning' | 'success' | 'danger'; icon: keyof typeof Ionicons.glyphMap; label: string }
+> = {
+  pending: { tone: 'warning', icon: 'hourglass-outline', label: 'Pending' },
+  approved: { tone: 'success', icon: 'checkmark-circle', label: 'Approved' },
+  rejected: { tone: 'danger', icon: 'close-circle', label: 'Rejected' },
+};
+
+// UPI ids are semi-sensitive — history shows only the last 4 characters,
+// masking the rest with bullets.
+function maskUpi(upiId: string) {
+  if (upiId.length <= 4) return upiId;
+  return '•'.repeat(upiId.length - 4) + upiId.slice(-4);
+}
+
 export function WalletScreen() {
-  const { points, runs, redeemPoints } = useApp();
+  const { points, runs, redeemPoints, redemptionRequests, fullName } = useApp();
   const [upiId, setUpiId] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | 'all' | null>(null);
   const [success, setSuccess] = useState(false);
@@ -41,6 +61,11 @@ export function WalletScreen() {
     setSuccess(true);
     setSelectedAmount(null);
   };
+
+  // The mock app is single-mason-context, but redeemPoints stamps every
+  // request with the applicant's name — filter on it so this stays correct
+  // if the mock state ever grows a second applicant.
+  const myRedemptions = redemptionRequests.filter((r) => r.applicantName === (fullName || 'GoMax User'));
 
   return (
     <View style={styles.root}>
@@ -141,6 +166,33 @@ export function WalletScreen() {
               roboto
             />
           </View>
+
+          <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>REDEMPTION HISTORY</Text>
+          {myRedemptions.length === 0 ? (
+            <View style={styles.historyEmpty}>
+              <Ionicons name="time-outline" size={32} color="rgba(10,22,40,0.25)" />
+              <Text style={styles.historyEmptyText}>No redemption requests yet</Text>
+              <Text style={styles.historyEmptySubtext}>Your withdrawal requests will show up here</Text>
+            </View>
+          ) : (
+            <View style={styles.historyList}>
+              {myRedemptions.map((r) => {
+                const meta = REDEMPTION_STATUS_META[r.status];
+                return (
+                  <View key={r.id} style={styles.historyRow}>
+                    <View style={styles.historyIcon}>
+                      <Ionicons name="cash-outline" size={16} color={colors.walletPointsAccent} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.historyAmount}>₹{r.amount.toLocaleString('en-IN')} pts</Text>
+                      <Text style={styles.historyMeta}>{maskUpi(r.upiId)} · {r.requestedAt}</Text>
+                    </View>
+                    <Pill label={meta.label} tone={meta.tone} icon={meta.icon} size="sm" />
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
       </View>
 
@@ -291,4 +343,28 @@ const styles = StyleSheet.create({
   },
   resultTitle: { ...m3Type.titleLarge, color: colors.neutral950 },
   resultSubtitle: { ...m3Type.labelLarge, color: colors.neutral500, textAlign: 'center', marginBottom: spacing.lg },
+  historyList: { gap: spacing.sm, marginTop: spacing.sm },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: 'rgba(10,22,40,0.02)',
+    borderWidth: 1,
+    borderColor: 'rgba(10,22,40,0.08)',
+    borderRadius: 13,
+    padding: spacing.md,
+  },
+  historyIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(193,68,14,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyAmount: { fontFamily: 'Inter_700Bold', fontSize: 13, color: colors.walletBg },
+  historyMeta: { fontFamily: 'Inter_500Medium', fontSize: 11, color: 'rgba(10,22,40,0.4)', marginTop: 2 },
+  historyEmpty: { alignItems: 'center', gap: 4, paddingVertical: spacing.xl },
+  historyEmptyText: { fontFamily: 'Inter_600SemiBold', fontSize: 13, color: 'rgba(10,22,40,0.45)', marginTop: spacing.xs },
+  historyEmptySubtext: { fontFamily: 'Inter_400Regular', fontSize: 11, color: 'rgba(10,22,40,0.3)' },
 });

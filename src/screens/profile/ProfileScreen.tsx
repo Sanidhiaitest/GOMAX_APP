@@ -97,9 +97,8 @@ export function ProfileScreen() {
           </View>
           <Text style={styles.name}>{fullName || 'GoMax User'}</Text>
           <Text style={styles.role}>{role ? ROLE_LABEL[role] : 'Role not set'}</Text>
-          <View style={styles.tierBadge}>
-            <Ionicons name="star" size={12} color={colors.orange500} />
-            <Text style={styles.tierText}>{loyaltyTier} Tier</Text>
+          <View style={{ marginTop: spacing.xs }}>
+            <Pill label={`${loyaltyTier} Tier`} tone="primary" icon="star" />
           </View>
         </View>
 
@@ -150,17 +149,6 @@ const styles = StyleSheet.create({
   avatarText: { color: colors.white, ...typography.h1 },
   name: { ...typography.h2, color: colors.textPrimary },
   role: { ...typography.body, color: colors.textSecondary },
-  tierBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.xs,
-    backgroundColor: colors.orange50,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  tierText: { ...typography.caption, color: colors.orange600, fontWeight: '600' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
