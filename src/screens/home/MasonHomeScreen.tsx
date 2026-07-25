@@ -49,7 +49,7 @@ export function MasonHomeScreen() {
           <Card style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>POINTS</Text>
             <Text style={styles.balanceValue}>{points}</Text>
-            <Text style={styles.balanceHint}>≈ ₹{(points * 0.165).toFixed(2)} cash value</Text>
+            <Text style={styles.balanceHint}>₹{points.toLocaleString('en-IN')} redeemable to UPI</Text>
           </Card>
           <Card style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>RUNS</Text>

@@ -59,7 +59,7 @@ export function WalletScreen() {
               <Text style={styles.pointsValue}>{points}</Text>
               <Text style={styles.cardUnit}>pts</Text>
             </View>
-            <Text style={styles.cardHint}>≈ ₹{(points * 0.165).toFixed(2)} cash value</Text>
+            <Text style={styles.cardHint}>₹{points.toLocaleString('en-IN')} redeemable to UPI</Text>
             <View style={styles.cardCta}>
               <Text style={styles.cardCtaText}>Paise Nikalo</Text>
             </View>
