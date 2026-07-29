@@ -14,7 +14,7 @@ import { tapHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Referral'>;
 
-const REFERRAL_CODE = 'GOMAX-RAM47X';
+export const REFERRAL_CODE = 'GOMAX-RAM47X';
 const SHARE_MESSAGE = `Mera GoMax code use karo aur milega bonus Points!\n\n${REFERRAL_CODE}\n\nhttps://gomax.app/r/${REFERRAL_CODE}`;
 
 const STATS = [
