@@ -32,21 +32,15 @@ const SEGMENTS = [
 
 const DAILY_SPIN_LIMIT = 3;
 
-// Bottom-anchored, edge-to-edge wheel per the founder's reference: the wheel
-// is wider than the screen and centered below it, so only its top arc peeks
-// up from the bottom edge with the spin hub sitting right at the seam —
-// rather than a small wheel floating mid-screen.
+// Full wheel, fully visible, centered in the space between the pill and the
+// bottom of the screen — not cropped or bottom-anchored.
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const SIZE = Math.round(SCREEN_WIDTH * 1.55);
-const RING_WIDTH = 12;
+const SIZE = Math.round(Math.min(SCREEN_WIDTH * 0.82, 320));
+const RING_WIDTH = 10;
 const RADIUS = SIZE / 2;
 const WHEEL_RADIUS = RADIUS - RING_WIDTH;
 const SEG_ANGLE = 360 / SEGMENTS.length;
-const HUB_SIZE = 60;
-const POINTER_CLEARANCE = 26;
-const WHEEL_TOP = HUB_SIZE / 2 + POINTER_CLEARANCE;
-const VISIBLE_HEIGHT = WHEEL_TOP + RADIUS;
-const WHEEL_LEFT = (SCREEN_WIDTH - SIZE) / 2;
+const HUB_SIZE = 56;
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -124,11 +118,9 @@ export function SpinWheelScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.wheelSection}>
-        <Text style={styles.tapHint}>{canSpin ? 'Tap the wheel to spin' : 'New spins tomorrow'}</Text>
-
-        <View style={styles.wheelClip}>
+        <View style={styles.wheelWrap}>
           <View style={styles.pointer} />
-          <Animated.View style={[styles.wheelAbs, { transform: [{ rotate: spin }] }]}>
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
             <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
               <Circle cx={RADIUS} cy={RADIUS} r={RADIUS - 1} fill={colors.orange500} />
               {SEGMENTS.map((seg, i) => (
@@ -142,18 +134,18 @@ export function SpinWheelScreen({ navigation }: Props) {
               ))}
               {SEGMENTS.map((seg, i) => {
                 const angle = i * SEG_ANGLE + SEG_ANGLE / 2;
-                const iconPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.72, angle);
-                const labelPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.52, angle);
+                const iconPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.7, angle);
+                const labelPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.45, angle);
                 return (
                   <React.Fragment key={`seg-content-${i}`}>
-                    <SvgText x={iconPos.x} y={iconPos.y} fontSize={20} textAnchor="middle">
+                    <SvgText x={iconPos.x} y={iconPos.y} fontSize={16} textAnchor="middle">
                       {seg.icon}
                     </SvgText>
                     <SvgText
                       x={labelPos.x}
                       y={labelPos.y}
                       fill={colors.white}
-                      fontSize={seg.label === 'Again' ? 14 : 20}
+                      fontSize={seg.label === 'Again' ? 12 : 17}
                       fontWeight="800"
                       textAnchor="middle"
                     >
@@ -164,11 +156,12 @@ export function SpinWheelScreen({ navigation }: Props) {
               })}
             </Svg>
           </Animated.View>
+          <PressableScale onPress={onSpin} disabled={!canSpin} style={[styles.hub, !canSpin && styles.hubDisabled]}>
+            <Ionicons name="sync" size={22} color={colors.white} />
+          </PressableScale>
         </View>
 
-        <PressableScale onPress={onSpin} disabled={!canSpin} style={[styles.hub, !canSpin && styles.hubDisabled]}>
-          <Ionicons name="sync" size={24} color={colors.white} />
-        </PressableScale>
+        <Text style={styles.tapHint}>{canSpin ? 'Tap the wheel to spin' : 'New spins tomorrow'}</Text>
       </View>
 
       <Modal visible={!!result} transparent animationType="fade">
@@ -218,25 +211,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wheelSection: { alignItems: 'center', marginTop: 'auto' },
-  wheelClip: { width: '100%', height: VISIBLE_HEIGHT, overflow: 'hidden' },
-  wheelAbs: { position: 'absolute', top: WHEEL_TOP - RADIUS, left: WHEEL_LEFT },
+  wheelSection: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  wheelWrap: { alignItems: 'center', justifyContent: 'center' },
   pointer: {
     position: 'absolute',
-    top: 0,
-    left: '50%',
-    marginLeft: -13,
+    top: -9,
     zIndex: 2,
     width: 0,
     height: 0,
-    borderLeftWidth: 13,
-    borderRightWidth: 13,
-    borderTopWidth: 20,
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
+    borderTopWidth: 18,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: colors.orange600,
   },
   hub: {
+    position: 'absolute',
     width: HUB_SIZE,
     height: HUB_SIZE,
     borderRadius: radius.pill,
@@ -245,10 +236,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: colors.white,
-    marginTop: -HUB_SIZE / 2,
   },
   hubDisabled: { opacity: 0.5 },
-  tapHint: { ...m3Type.labelMedium, color: colors.neutral400, textAlign: 'center', marginBottom: spacing.md },
+  tapHint: { ...m3Type.labelMedium, color: colors.neutral400, textAlign: 'center' },
   resultBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, position: 'relative', overflow: 'hidden' },
   resultEmoji: { fontSize: 48 },
