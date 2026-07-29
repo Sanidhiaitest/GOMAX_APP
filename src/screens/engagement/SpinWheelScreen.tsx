@@ -1,45 +1,52 @@
 import React, { useRef, useState } from 'react';
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
 import { colors, m3Type, radius, spacing } from '../../theme';
-import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
-import { GlowBorder, PressableScale, RewardBurst, UnlockReveal } from '../../components/animations';
+import { PressableScale, RewardBurst, UnlockReveal } from '../../components/animations';
+import { Button } from '../../components/Button';
 import { useApp } from '../../state/AppContext';
 import { RootStackParamList } from '../../navigation/types';
 import { softHaptic, successHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SpinWheel'>;
 
-// Layout follows the founder's reference screenshot (back+label header,
-// segmented tab row, big title, "spins remaining" pill, wheel, tap hint) —
-// but recolored in GoMax's own softened orange/navy palette instead of the
-// reference's purple/gold, and copy switched to the same Hinglish voice
-// already used on Wallet ("Apni kamai dekho", "Paise Nikalo") since masons
-// are the audience here. Only "Spin & Jeeto" is a real, built screen — the
-// other two tabs are visual-only placeholders per the "don't build things we
-// can't launch yet" rule; tapping them just gives a soft haptic, no dead nav.
-const TABS = ['Video Dekho', 'Spin & Jeeto', 'Shop Karo'] as const;
-
+// Layout follows the founder's reference screenshot (back+label header, big
+// title, "spins remaining" pill, edge-to-edge bottom-anchored wheel, tap
+// hint) — recolored in GoMax's own softened orange/navy palette. No tab row:
+// only Spin & Win is a real, built feature here, so the screen only shows
+// what a mason can actually do. Copy stays mostly English with a couple of
+// Hindi words for local flavor, consistent with the rest of the app.
 const SEGMENTS = [
-  { label: '100', runs: 100 },
-  { label: '20', runs: 20 },
-  { label: '50', runs: 50 },
-  { label: '10', runs: 10 },
-  { label: 'Fir Try', runs: 0 },
-  { label: '40', runs: 40 },
-  { label: '20', runs: 20 },
-  { label: '80', runs: 80 },
+  { label: '100', icon: '⭐', runs: 100 },
+  { label: '20', icon: '🪙', runs: 20 },
+  { label: '50', icon: '💰', runs: 50 },
+  { label: '10', icon: '🪙', runs: 10 },
+  { label: 'Again', icon: '🔄', runs: 0 },
+  { label: '40', icon: '💰', runs: 40 },
+  { label: '20', icon: '🪙', runs: 20 },
+  { label: '80', icon: '💎', runs: 80 },
 ];
 
 const DAILY_SPIN_LIMIT = 3;
-const SIZE = 300;
-const RING_WIDTH = 10;
+
+// Bottom-anchored, edge-to-edge wheel per the founder's reference: the wheel
+// is wider than the screen and centered below it, so only its top arc peeks
+// up from the bottom edge with the spin hub sitting right at the seam —
+// rather than a small wheel floating mid-screen.
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SIZE = Math.round(SCREEN_WIDTH * 1.55);
+const RING_WIDTH = 12;
 const RADIUS = SIZE / 2;
 const WHEEL_RADIUS = RADIUS - RING_WIDTH;
 const SEG_ANGLE = 360 / SEGMENTS.length;
+const HUB_SIZE = 60;
+const POINTER_CLEARANCE = 26;
+const WHEEL_TOP = HUB_SIZE / 2 + POINTER_CLEARANCE;
+const VISIBLE_HEIGHT = WHEEL_TOP + RADIUS;
+const WHEEL_LEFT = (SCREEN_WIDTH - SIZE) / 2;
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -100,87 +107,68 @@ export function SpinWheelScreen({ navigation }: Props) {
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.backButton} hitSlop={8}>
           <Ionicons name="chevron-back" size={20} color={colors.navy800} />
-          <Text style={styles.backButtonText}>Inaam Kamao</Text>
+          <Text style={styles.backButtonText}>Earn Runs</Text>
         </Pressable>
       </View>
 
-      <View style={styles.tabTrough}>
-        {TABS.map((tab) => {
-          const active = tab === 'Spin & Jeeto';
-          return (
-            <Pressable
-              key={tab}
-              style={[styles.tabPill, active && styles.tabPillActive]}
-              onPress={() => !active && softHaptic()}
-            >
-              <Text style={[styles.tabPillText, active && styles.tabPillTextActive]}>{tab}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Text style={styles.title}>Ghumao aur Jeeto!</Text>
-      <Text style={styles.subtitle}>Har din free spin — Runs jeeto</Text>
+      <Text style={styles.title}>Spin &amp; Win</Text>
+      <Text style={styles.subtitle}>Spin daily to win bonus Runs</Text>
 
       <View style={styles.spinPill}>
         <Text style={styles.spinPillText}>
-          {spinsLeft > 0 ? `Aaj ${spinsLeft} spin baaki hain` : 'Aaj ke spin khatam — kal phir aana'}
+          {spinsLeft > 0 ? `${spinsLeft} spin${spinsLeft > 1 ? 's' : ''} left today` : 'No spins left — come back tomorrow'}
         </Text>
         <View style={styles.spinPillIcon}>
           <Ionicons name="information" size={11} color={colors.white} />
         </View>
       </View>
 
-      <View style={styles.wheelWrap}>
-        <View style={styles.pointer} />
-        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-            <Circle cx={RADIUS} cy={RADIUS} r={RADIUS - 1} fill={colors.orange500} />
-            {SEGMENTS.map((seg, i) => (
-              <Path
-                key={i}
-                d={segmentPath(i, WHEEL_RADIUS)}
-                fill={i % 2 === 0 ? colors.navy800 : colors.navy700}
-                stroke={colors.orange500}
-                strokeWidth={1.5}
-              />
-            ))}
-            {SEGMENTS.map((seg, i) => {
-              const mid = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.6, i * SEG_ANGLE + SEG_ANGLE / 2);
-              return (
-                <SvgText
-                  key={`label-${i}`}
-                  x={mid.x}
-                  y={mid.y}
-                  fill={colors.white}
-                  fontSize={seg.label === 'Fir Try' ? 12 : 18}
-                  fontWeight="800"
-                  textAnchor="middle"
-                >
-                  {seg.label}
-                </SvgText>
-              );
-            })}
-          </Svg>
-        </Animated.View>
+      <View style={styles.wheelSection}>
+        <Text style={styles.tapHint}>{canSpin ? 'Tap the wheel to spin' : 'New spins tomorrow'}</Text>
+
+        <View style={styles.wheelClip}>
+          <View style={styles.pointer} />
+          <Animated.View style={[styles.wheelAbs, { transform: [{ rotate: spin }] }]}>
+            <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+              <Circle cx={RADIUS} cy={RADIUS} r={RADIUS - 1} fill={colors.orange500} />
+              {SEGMENTS.map((seg, i) => (
+                <Path
+                  key={i}
+                  d={segmentPath(i, WHEEL_RADIUS)}
+                  fill={i % 2 === 0 ? colors.navy800 : colors.navy700}
+                  stroke={colors.orange500}
+                  strokeWidth={1.5}
+                />
+              ))}
+              {SEGMENTS.map((seg, i) => {
+                const angle = i * SEG_ANGLE + SEG_ANGLE / 2;
+                const iconPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.72, angle);
+                const labelPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.52, angle);
+                return (
+                  <React.Fragment key={`seg-content-${i}`}>
+                    <SvgText x={iconPos.x} y={iconPos.y} fontSize={20} textAnchor="middle">
+                      {seg.icon}
+                    </SvgText>
+                    <SvgText
+                      x={labelPos.x}
+                      y={labelPos.y}
+                      fill={colors.white}
+                      fontSize={seg.label === 'Again' ? 14 : 20}
+                      fontWeight="800"
+                      textAnchor="middle"
+                    >
+                      {seg.label}
+                    </SvgText>
+                  </React.Fragment>
+                );
+              })}
+            </Svg>
+          </Animated.View>
+        </View>
+
         <PressableScale onPress={onSpin} disabled={!canSpin} style={[styles.hub, !canSpin && styles.hubDisabled]}>
-          <Ionicons name="sync" size={22} color={colors.white} />
+          <Ionicons name="sync" size={24} color={colors.white} />
         </PressableScale>
-      </View>
-
-      <Text style={styles.tapHint}>{canSpin ? 'Wheel par tap karo' : 'Spin kal phir milega'}</Text>
-
-      <View style={styles.footer}>
-        {canSpin ? (
-          <GlowBorder
-            cornerRadius={radius.pill}
-            borderWidth={2}
-            backgroundColor={colors.white}
-            colorsSet={[colors.orange500, colors.navy700, colors.orange600, colors.orange500]}
-          >
-            <Button label="🎯 Spin Karo" onPress={onSpin} disabled={!canSpin} loading={spinning} icon={null} />
-          </GlowBorder>
-        ) : null}
       </View>
 
       <Modal visible={!!result} transparent animationType="fade">
@@ -189,12 +177,12 @@ export function SpinWheelScreen({ navigation }: Props) {
             <RewardBurst trigger={burstTrigger} colorsSet={[colors.orange500, colors.navy700, colors.orange600, colors.white]} />
             <UnlockReveal visible={!!result} glow={!!result && result.runs > 0} glowColor={colors.orange500}>
               <Text style={styles.resultEmoji}>{result && result.runs > 0 ? '🎉' : '😅'}</Text>
-              <Text style={styles.resultTitle}>{result && result.runs > 0 ? `+${result.runs} Runs Mile!` : 'Agli baar zaroor!'}</Text>
+              <Text style={styles.resultTitle}>{result && result.runs > 0 ? `+${result.runs} Runs!` : 'Try again tomorrow'}</Text>
             </UnlockReveal>
             {result && result.runs > 0 ? (
-              <Text style={styles.resultSubtitle}>Aapke Runs balance mein add ho gaya</Text>
+              <Text style={styles.resultSubtitle}>Added to your Runs balance</Text>
             ) : (
-              <Text style={styles.resultSubtitle}>Kal phir try karo!</Text>
+              <Text style={styles.resultSubtitle}>Better luck next spin!</Text>
             )}
             <Button label="Shabaash!" onPress={() => setResult(null)} />
           </View>
@@ -208,18 +196,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   backButton: { flexDirection: 'row', alignItems: 'center', gap: 2, height: 40 },
   backButtonText: { ...m3Type.titleMedium, fontSize: 15, color: colors.navy800 },
-  tabTrough: {
-    flexDirection: 'row',
-    backgroundColor: colors.orange100,
-    borderRadius: radius.pill,
-    padding: 4,
-    marginHorizontal: spacing.xl,
-    marginTop: spacing.md,
-  },
-  tabPill: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: radius.pill },
-  tabPillActive: { backgroundColor: colors.primary700 },
-  tabPillText: { ...m3Type.labelLarge, fontSize: 11.5, color: colors.navy700, fontWeight: '700' },
-  tabPillTextActive: { color: colors.white },
   title: { ...m3Type.headlineMedium, fontSize: 26, fontWeight: '800', color: colors.navy800, textAlign: 'center', marginTop: spacing.xl },
   subtitle: { ...m3Type.labelLarge, color: colors.neutral500, textAlign: 'center', marginTop: 4 },
   spinPill: {
@@ -242,10 +218,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wheelWrap: { alignItems: 'center', justifyContent: 'center', marginTop: spacing.xxl },
+  wheelSection: { alignItems: 'center', marginTop: 'auto' },
+  wheelClip: { width: '100%', height: VISIBLE_HEIGHT, overflow: 'hidden' },
+  wheelAbs: { position: 'absolute', top: WHEEL_TOP - RADIUS, left: WHEEL_LEFT },
   pointer: {
     position: 'absolute',
-    top: -10,
+    top: 0,
+    left: '50%',
+    marginLeft: -13,
     zIndex: 2,
     width: 0,
     height: 0,
@@ -257,19 +237,18 @@ const styles = StyleSheet.create({
     borderTopColor: colors.orange600,
   },
   hub: {
-    position: 'absolute',
-    width: 52,
-    height: 52,
+    width: HUB_SIZE,
+    height: HUB_SIZE,
     borderRadius: radius.pill,
     backgroundColor: colors.orange500,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: colors.white,
+    marginTop: -HUB_SIZE / 2,
   },
   hubDisabled: { opacity: 0.5 },
-  tapHint: { ...m3Type.labelMedium, color: colors.neutral400, textAlign: 'center', marginTop: spacing.md },
-  footer: { paddingHorizontal: spacing.xl, marginTop: 'auto', paddingBottom: spacing.xl },
+  tapHint: { ...m3Type.labelMedium, color: colors.neutral400, textAlign: 'center', marginBottom: spacing.md },
   resultBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, position: 'relative', overflow: 'hidden' },
   resultEmoji: { fontSize: 48 },
