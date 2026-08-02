@@ -9,19 +9,11 @@ import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
 import { GlowBorder, RewardBurst } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
+import { useMyReferrals } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
 import { tapHaptic } from '../../utils/haptics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Referral'>;
-
-export const REFERRAL_CODE = 'GOMAX-RAM47X';
-const SHARE_MESSAGE = `Mera GoMax code use karo aur milega bonus Points!\n\n${REFERRAL_CODE}\n\nhttps://gomax.app/r/${REFERRAL_CODE}`;
-
-const STATS = [
-  { label: 'Referred', value: '4' },
-  { label: 'Joined', value: '2' },
-  { label: 'Points earned', value: '90' },
-];
 
 const STEPS = [
   { icon: 'share-social-outline' as const, title: 'Share your code', subtitle: 'Send your code to a fellow applicator on WhatsApp' },
@@ -33,12 +25,20 @@ const STEPS = [
 // inspired by the "Give Claude, get more Claude" reference they shared.
 // Single-level only per the PRD's Prize Chits Act, 1978 compliance note.
 export function ReferralScreen({ navigation }: Props) {
-  const { addRuns } = useApp();
+  const { referralCode } = useApp();
+  const { data: referrals } = useMyReferrals();
   const [copied, setCopied] = useState(false);
   const [burstTrigger, setBurstTrigger] = useState(0);
 
+  const shareMessage = `Mera GoMax code use karo aur milega bonus Points!\n\n${referralCode}\n\nhttps://gomax.app/r/${referralCode}`;
+  const stats = [
+    { label: 'Referred', value: String(referrals.length) },
+    { label: 'Joined', value: String(referrals.filter((r) => r.status !== 'pending').length) },
+    { label: 'Points earned', value: String(referrals.reduce((sum, r) => sum + r.points_awarded, 0)) },
+  ];
+
   const onCopy = async () => {
-    await Clipboard.setStringAsync(REFERRAL_CODE);
+    await Clipboard.setStringAsync(referralCode);
     setCopied(true);
     setBurstTrigger((n) => n + 1);
     tapHaptic();
@@ -46,9 +46,9 @@ export function ReferralScreen({ navigation }: Props) {
   };
 
   const onShareWhatsApp = () => {
-    const url = `whatsapp://send?text=${encodeURIComponent(SHARE_MESSAGE)}`;
+    const url = `whatsapp://send?text=${encodeURIComponent(shareMessage)}`;
     Linking.openURL(url).catch(() => {
-      // WhatsApp not installed — no-op fallback for this mock flow.
+      // WhatsApp not installed — no-op fallback.
     });
   };
 
@@ -73,7 +73,7 @@ export function ReferralScreen({ navigation }: Props) {
             <Text style={styles.heroSubtitle}>Share your code — earn Points for every friend who joins</Text>
 
             <View style={styles.codeRow}>
-              <Text style={styles.codeText}>{REFERRAL_CODE}</Text>
+              <Text style={styles.codeText}>{referralCode}</Text>
               <Pressable style={styles.copyButton} onPress={onCopy}>
                 <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={16} color={colors.white} />
                 <Text style={styles.copyButtonText}>{copied ? 'Copied' : 'Copy'}</Text>
@@ -87,7 +87,7 @@ export function ReferralScreen({ navigation }: Props) {
         </GlowBorder>
 
         <View style={styles.statsRow}>
-          {STATS.map((stat) => (
+          {stats.map((stat) => (
             <Card key={stat.label} style={styles.statCard}>
               <Text style={styles.statValue}>{stat.value}</Text>
               <Text style={styles.statLabel}>{stat.label}</Text>

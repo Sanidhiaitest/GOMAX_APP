@@ -10,18 +10,23 @@ import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { StatTile } from '../../components/StatTile';
 import { useApp } from '../../state/AppContext';
-import { fraudFlags, kpiSummary, otherApplicators, otherDealerApplications } from '../../data/adminMock';
+import { useApplicators, useFraudFlags, useKpiSummary, usePendingDealerApprovals, usePendingRedemptions } from '../../hooks/useSupabaseData';
 import { AdminTabParamList, RootStackParamList } from '../../navigation/types';
 
 type Nav = BottomTabNavigationProp<AdminTabParamList> & NativeStackNavigationProp<RootStackParamList>;
 
 export function AdminDashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { role, dealerVerificationStatus, redemptionRequests, adminLogout } = useApp();
+  const { role, adminLogout } = useApp();
+  const { data: kpiSummary } = useKpiSummary();
+  const { data: fraudFlags } = useFraudFlags();
+  const { data: otherApplicators } = useApplicators();
+  const { data: pendingDealerApprovals } = usePendingDealerApprovals();
+  const { data: pendingRedemptions } = usePendingRedemptions();
 
-  const pendingDealerCount = otherDealerApplications.length + (role === 'dealer' && dealerVerificationStatus === 'pending' ? 1 : 0);
-  const pendingRedemptionCount = redemptionRequests.filter((r) => r.status === 'pending').length;
-  const activeApplicators = otherApplicators.length + (role === 'mason' ? 1 : 0);
+  const pendingDealerCount = pendingDealerApprovals.length;
+  const pendingRedemptionCount = pendingRedemptions.length;
+  const activeApplicators = otherApplicators.length;
 
   const onLogout = () => {
     adminLogout();

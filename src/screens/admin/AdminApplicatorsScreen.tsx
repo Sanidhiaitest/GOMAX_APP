@@ -7,17 +7,30 @@ import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { StatTile } from '../../components/StatTile';
 import { useApp } from '../../state/AppContext';
-import { otherApplicators } from '../../data/adminMock';
+import { useApplicators } from '../../hooks/useSupabaseData';
 
 export function AdminApplicatorsScreen() {
   const { role, fullName, city, loyaltyTier, points, scanHistory } = useApp();
+  const { data: otherApplicators } = useApplicators();
 
   const liveApplicator =
     role === 'mason'
       ? [{ id: 'live', name: fullName || 'You', city: city || '—', tier: loyaltyTier, scansThisMonth: scanHistory.length, pointsBalance: points }]
       : [];
 
-  const applicators = [...liveApplicator, ...otherApplicators];
+  const applicators = [
+    ...liveApplicator,
+    ...otherApplicators
+      .filter((a) => a.full_name !== fullName)
+      .map((a) => ({
+        id: a.id,
+        name: a.full_name || 'GoMax User',
+        city: a.city || '—',
+        tier: a.loyalty_tier,
+        scansThisMonth: 0,
+        pointsBalance: a.points,
+      })),
+  ];
   const totalScans = applicators.reduce((sum, a) => sum + a.scansThisMonth, 0);
 
   return (

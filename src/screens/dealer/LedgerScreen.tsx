@@ -6,12 +6,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
-import { dealerLedger, ledgerTransactions } from '../../data/dealerMock';
+import { useApp } from '../../state/AppContext';
+import { useMyLedger } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
 
 export function LedgerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const utilisation = Math.round((dealerLedger.outstanding / dealerLedger.creditLimit) * 100);
+  const { dealerBusiness } = useApp();
+  const { data: ledgerTransactions } = useMyLedger();
+  const utilisation = dealerBusiness.creditLimit
+    ? Math.round((dealerBusiness.outstanding / dealerBusiness.creditLimit) * 100)
+    : 0;
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -37,12 +42,13 @@ export function LedgerScreen() {
         ListHeaderComponent={
           <Card style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>OUTSTANDING BALANCE</Text>
-            <Text style={styles.summaryValue}>₹{dealerLedger.outstanding.toLocaleString('en-IN')}</Text>
+            <Text style={styles.summaryValue}>₹{dealerBusiness.outstanding.toLocaleString('en-IN')}</Text>
             <View style={styles.barTrack}>
               <View style={[styles.barFill, { width: `${utilisation}%` }]} />
             </View>
             <Text style={styles.summaryHint}>
-              {utilisation}% of ₹{dealerLedger.creditLimit.toLocaleString('en-IN')} limit · Due {dealerLedger.dueDate}
+              {utilisation}% of ₹{dealerBusiness.creditLimit.toLocaleString('en-IN')} limit
+              {dealerBusiness.dueDate ? ` · Due ${dealerBusiness.dueDate}` : ''}
             </Text>
           </Card>
         }
@@ -57,7 +63,7 @@ export function LedgerScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.rowLabel}>{item.label}</Text>
-              <Text style={styles.rowDate}>{item.date}</Text>
+              <Text style={styles.rowDate}>{new Date(item.txn_date).toLocaleDateString()}</Text>
             </View>
             <Text style={[styles.rowAmount, item.type === 'credit' ? styles.creditText : styles.debitText]}>
               {item.type === 'credit' ? '−' : '+'}₹{item.amount.toLocaleString('en-IN')}

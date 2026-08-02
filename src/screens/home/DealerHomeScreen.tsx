@@ -8,8 +8,10 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
-import { dealerLedger, recentOrders, scanNotifications, OrderStatus } from '../../data/dealerMock';
+import { useMyOrders } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
+
+type OrderStatus = 'Placed' | 'Billed' | 'In transit' | 'Delivered';
 
 const STATUS_META: Record<OrderStatus, { tone: 'neutral' | 'warning' | 'info' | 'success'; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }> = {
   Placed: { tone: 'neutral', icon: 'ellipse-outline' },
@@ -21,7 +23,10 @@ const STATUS_META: Record<OrderStatus, { tone: 'neutral' | 'warning' | 'info' | 
 export function DealerHomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { fullName, city, dealerBusiness, dealerVerificationStatus } = useApp();
-  const utilisation = Math.round((dealerLedger.outstanding / dealerLedger.creditLimit) * 100);
+  const { data: recentOrders } = useMyOrders();
+  const utilisation = dealerBusiness.creditLimit
+    ? Math.round((dealerBusiness.outstanding / dealerBusiness.creditLimit) * 100)
+    : 0;
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -47,12 +52,13 @@ export function DealerHomeScreen() {
         <Pressable onPress={() => navigation.navigate('Ledger')}>
           <Card style={styles.ledgerCard}>
             <Text style={styles.ledgerLabel}>OUTSTANDING BALANCE</Text>
-            <Text style={styles.ledgerValue}>₹{dealerLedger.outstanding.toLocaleString('en-IN')}</Text>
+            <Text style={styles.ledgerValue}>₹{dealerBusiness.outstanding.toLocaleString('en-IN')}</Text>
             <View style={styles.ledgerBarTrack}>
               <View style={[styles.ledgerBarFill, { width: `${utilisation}%` }]} />
             </View>
             <Text style={styles.ledgerHint}>
-              {utilisation}% of ₹{dealerLedger.creditLimit.toLocaleString('en-IN')} limit used · Due {dealerLedger.dueDate}
+              {utilisation}% of ₹{dealerBusiness.creditLimit.toLocaleString('en-IN')} limit used
+              {dealerBusiness.dueDate ? ` · Due ${dealerBusiness.dueDate}` : ''}
             </Text>
           </Card>
         </Pressable>
@@ -61,25 +67,6 @@ export function DealerHomeScreen() {
           <Ionicons name="add-circle-outline" size={22} color={colors.white} />
           <Text style={styles.newOrderCtaText}>Place New Order</Text>
         </Pressable>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Scan notifications</Text>
-        </View>
-        <View style={{ gap: spacing.md }}>
-          {scanNotifications.map((n) => (
-            <Card key={n.id} style={styles.notifRow}>
-              <View style={styles.notifIcon}>
-                <Ionicons name="qr-code-outline" size={18} color={colors.orange600} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.notifTitle}>
-                  <Text style={styles.notifBold}>{n.mason}</Text> scanned {n.product}
-                </Text>
-                <Text style={styles.notifTime}>{n.time}</Text>
-              </View>
-            </Card>
-          ))}
-        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent orders</Text>
@@ -92,11 +79,16 @@ export function DealerHomeScreen() {
             <Pressable key={o.id} onPress={() => navigation.navigate('OrderDetail', { orderId: o.id })}>
               <Card style={styles.orderRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.orderNo}>{o.orderNo}</Text>
-                  <Text style={styles.orderDate}>{o.date}</Text>
+                  <Text style={styles.orderNo}>{o.order_no}</Text>
+                  <Text style={styles.orderDate}>{new Date(o.order_date).toLocaleDateString()}</Text>
                 </View>
-                <Text style={styles.orderAmount}>₹{o.amount.toLocaleString('en-IN')}</Text>
-                <Pill label={o.status} tone={STATUS_META[o.status].tone} icon={STATUS_META[o.status].icon} size="sm" />
+                <Text style={styles.orderAmount}>₹{Number(o.amount).toLocaleString('en-IN')}</Text>
+                <Pill
+                  label={o.status}
+                  tone={STATUS_META[o.status as OrderStatus].tone}
+                  icon={STATUS_META[o.status as OrderStatus].icon}
+                  size="sm"
+                />
               </Card>
             </Pressable>
           ))}

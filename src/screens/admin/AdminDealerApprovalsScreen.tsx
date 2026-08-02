@@ -7,23 +7,19 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
-import { otherDealerApplications } from '../../data/adminMock';
+import { usePendingDealerApprovals } from '../../hooks/useSupabaseData';
 
 export function AdminDealerApprovalsScreen() {
-  const { role, dealerBusiness, dealerVerificationStatus, approveDealerVerification } = useApp();
+  const { approveDealerVerification } = useApp();
+  const { data: pending, reload } = usePendingDealerApprovals();
 
-  const liveApplication =
-    role === 'dealer'
-      ? {
-          id: 'live',
-          shopName: dealerBusiness.shopName || 'Unnamed shop',
-          city: dealerBusiness.address || '—',
-          submittedAgo: 'Just now',
-          status: dealerVerificationStatus,
-        }
-      : null;
-
-  const applications = [...(liveApplication ? [liveApplication] : []), ...otherDealerApplications];
+  const applications = pending.map((app) => ({
+    id: app.dealer_id,
+    shopName: app.shop_name || 'Unnamed shop',
+    city: app.address || '—',
+    submittedAgo: new Date(app.created_at).toLocaleDateString(),
+    status: app.verification_status as 'pending' | 'verified',
+  }));
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -60,9 +56,10 @@ export function AdminDealerApprovalsScreen() {
                     <Button
                       label="Approve"
                       icon="checkmark"
-                      onPress={() => {
-                        if (app.id === 'live') approveDealerVerification();
-                        else Alert.alert('Approved', `${app.shopName} has been activated.`);
+                      onPress={async () => {
+                        await approveDealerVerification(app.id);
+                        await reload();
+                        Alert.alert('Approved', `${app.shopName} has been activated.`);
                       }}
                     />
                   </View>

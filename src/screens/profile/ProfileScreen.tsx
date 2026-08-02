@@ -11,10 +11,8 @@ import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { GoMaxLogo } from '../../components/GoMaxLogo';
 import { useApp } from '../../state/AppContext';
+import { useMyMonthlyAchieved } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
-import { dealerLedger } from '../../data/dealerMock';
-import { salesmanTarget } from '../../data/salesmanMock';
-import { REFERRAL_CODE } from '../engagement/ReferralScreen';
 import { softHaptic } from '../../utils/haptics';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -103,8 +101,11 @@ export function ProfileScreen() {
     dealerBusiness,
     dealerVerificationStatus,
     employeeCode,
+    referralCode,
     logout,
   } = useApp();
+  const { data: achieved } = useMyMonthlyAchieved();
+  const SALESMAN_MONTHLY_TARGET = 250000;
   const kyc = KYC_LABEL[kycStatus];
 
   // logout() only resets AppContext state — it never moves the navigator.
@@ -112,8 +113,8 @@ export function ProfileScreen() {
   // role === null fallback silently re-renders the Mason tabs, leaving a
   // "logged out" user stuck inside the app with no way back to onboarding.
   // Mirrors the pattern AdminDashboardScreen already uses for admin logout.
-  const onLogout = () => {
-    logout();
+  const onLogout = async () => {
+    await logout();
     navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
   };
 
@@ -122,9 +123,13 @@ export function ProfileScreen() {
 
   const ring =
     role === 'dealer'
-      ? { pct: Math.min(100, Math.round((dealerLedger.outstanding / dealerLedger.creditLimit) * 100)), icon: 'card-outline' as const, label: 'Credit used' }
+      ? {
+          pct: dealerBusiness.creditLimit ? Math.min(100, Math.round((dealerBusiness.outstanding / dealerBusiness.creditLimit) * 100)) : 0,
+          icon: 'card-outline' as const,
+          label: 'Credit used',
+        }
       : role === 'salesman'
-      ? { pct: Math.min(100, Math.round((salesmanTarget.achieved / salesmanTarget.target) * 100)), icon: 'trending-up-outline' as const, label: 'Target hit' }
+      ? { pct: Math.min(100, Math.round((achieved / SALESMAN_MONTHLY_TARGET) * 100)), icon: 'trending-up-outline' as const, label: 'Target hit' }
       : { pct: tierRingPct(points), icon: 'star' as const, label: `${loyaltyTier} tier` };
 
   const idCardFields =
@@ -139,7 +144,7 @@ export function ProfileScreen() {
           { label: 'Region', value: city || '—' },
         ]
       : [
-          { label: 'Referral Code', value: REFERRAL_CODE },
+          { label: 'Referral Code', value: referralCode },
           { label: 'City / District', value: city || '—' },
         ];
 

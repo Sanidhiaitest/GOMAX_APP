@@ -7,10 +7,11 @@ import { colors, m3Type, spacing } from '../../theme';
 import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
-import { beatPlan, BeatStop } from '../../data/salesmanMock';
+import { useMyBeatPlan } from '../../hooks/useSupabaseData';
+import { BeatPlanRow } from '../../services/salesman';
 import { RootStackParamList } from '../../navigation/types';
 
-const STATUS_META: Record<BeatStop['status'], { label: string; tone: 'success' | 'warning' | 'neutral'; icon: keyof typeof Ionicons.glyphMap }> = {
+const STATUS_META: Record<BeatPlanRow['status'], { label: string; tone: 'success' | 'warning' | 'neutral'; icon: keyof typeof Ionicons.glyphMap }> = {
   visited: { label: 'Visited', tone: 'success', icon: 'checkmark-circle' },
   pending: { label: 'Pending', tone: 'warning', icon: 'time-outline' },
   skipped: { label: 'Skipped', tone: 'neutral', icon: 'close-circle-outline' },
@@ -18,6 +19,7 @@ const STATUS_META: Record<BeatStop['status'], { label: string; tone: 'success' |
 
 export function DealersListScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { data: beatPlan } = useMyBeatPlan();
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -31,18 +33,18 @@ export function DealersListScreen() {
         contentContainerStyle={styles.content}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         renderItem={({ item }) => {
-          const meta = STATUS_META[item.status];
+          const meta = STATUS_META[item.status as BeatPlanRow['status']];
           return (
             <Pressable onPress={() => navigation.navigate('DealerDetail', { dealerId: item.id })}>
               <Card style={styles.row}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>{item.dealerName}</Text>
+                  <Text style={styles.name}>{item.dealer_name}</Text>
                   <Text style={styles.area}>{item.area}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
                   <Pill label={meta.label} tone={meta.tone} icon={meta.icon} size="sm" />
-                  {item.outstanding > 0 ? (
-                    <Text style={styles.outstanding}>₹{item.outstanding.toLocaleString('en-IN')} due</Text>
+                  {item.last_order_amount ? (
+                    <Text style={styles.outstanding}>Last order ₹{Number(item.last_order_amount).toLocaleString('en-IN')}</Text>
                   ) : null}
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />

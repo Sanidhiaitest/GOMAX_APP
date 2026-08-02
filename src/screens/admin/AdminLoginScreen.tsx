@@ -21,13 +21,19 @@ export function AdminLoginScreen({ navigation }: Props) {
   const [id, setId] = useState('');
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const onLogin = () => {
+  const onLogin = async () => {
     setLoading(true);
-    setTimeout(() => {
-      adminLogin();
+    setError('');
+    try {
+      await adminLogin(id, pin);
       navigation.replace('AdminMain');
-    }, 700);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Sign-in failed. Check your ID and PIN.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,10 +51,11 @@ export function AdminLoginScreen({ navigation }: Props) {
           <Button
             label={loading ? 'Signing in…' : 'Sign in'}
             onPress={onLogin}
-            disabled={id.length < 2 || pin.length < 2 || loading}
+            disabled={id.length < 2 || pin.length < 6 || loading}
             loading={loading}
             icon={null}
           />
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
 
         <View style={styles.footerNote}>
@@ -70,6 +77,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.xl,
   },
+  errorText: { ...m3Type.labelMedium, color: colors.danger, marginTop: spacing.md, textAlign: 'center' },
   footerNote: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xl },
   footerText: { ...m3Type.labelMedium, color: 'rgba(255,255,255,0.5)' },
 });

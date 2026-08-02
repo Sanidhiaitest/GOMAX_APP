@@ -6,21 +6,41 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
-import { products } from '../../data/dealerMock';
+import { useProducts } from '../../hooks/useSupabaseData';
+import { placeOrder } from '../../services/dealer';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderPlacement'>;
 
 export function OrderPlacementScreen({ navigation }: Props) {
+  const { data: products } = useProducts();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [placed, setPlaced] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [error, setError] = useState('');
 
   const setQty = (id: string, delta: number) => {
     setQuantities((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] ?? 0) + delta) }));
   };
 
-  const total = products.reduce((sum, p) => sum + (quantities[p.id] ?? 0) * p.price, 0);
+  const total = products.reduce((sum, p) => sum + (quantities[p.id] ?? 0) * Number(p.price), 0);
   const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0);
+
+  const onPlaceOrder = async () => {
+    setPlacing(true);
+    setError('');
+    try {
+      const items = products
+        .filter((p) => (quantities[p.id] ?? 0) > 0)
+        .map((p) => ({ productId: p.id, name: p.name, qty: quantities[p.id], price: Number(p.price) }));
+      await placeOrder(items);
+      setPlaced(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not place order. Try again.');
+    } finally {
+      setPlacing(false);
+    }
+  };
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -45,7 +65,7 @@ export function OrderPlacementScreen({ navigation }: Props) {
             <Card key={product.id} style={styles.productRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPrice}>₹{product.price} {product.unit}</Text>
+                <Text style={styles.productPrice}>₹{Number(product.price)} {product.unit}</Text>
               </View>
               <View style={styles.stepper}>
                 <Pressable
@@ -80,7 +100,12 @@ export function OrderPlacementScreen({ navigation }: Props) {
           <Text style={styles.totalLabel}>{totalItems} item{totalItems !== 1 ? 's' : ''}</Text>
           <Text style={styles.totalValue}>₹{total.toLocaleString('en-IN')}</Text>
         </View>
-        <Button label="Place Order" onPress={() => setPlaced(true)} disabled={totalItems === 0} />
+        <Button
+          label={placing ? 'Placing…' : 'Place Order'}
+          onPress={onPlaceOrder}
+          disabled={totalItems === 0 || placing}
+        />
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
 
       <Modal visible={placed} transparent animationType="fade">
@@ -132,6 +157,7 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { ...m3Type.labelLarge, color: colors.neutral500 },
   totalValue: { ...m3Type.headlineMedium, fontSize: 22, color: colors.textPrimary },
+  errorText: { ...m3Type.labelMedium, color: colors.danger, textAlign: 'center' },
   resultBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm },
   resultIcon: {

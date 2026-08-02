@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,7 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { OtpInput } from '../../components/OtpInput';
 import { photos } from '../../assets/images';
+import { useApp } from '../../state/AppContext';
 import { OnboardingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Otp'>;
@@ -15,9 +16,11 @@ const RESEND_SECONDS = 28;
 
 // Node 1:124 — same header gradient as MobileNumber, different photo
 export function OtpScreen({ navigation }: Props) {
+  const { verifyOtp, sendOtp, pendingMobileNumber, role, onboardingComplete } = useApp();
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (seconds <= 0) return;
@@ -27,10 +30,31 @@ export function OtpScreen({ navigation }: Props) {
 
   const canSubmit = otp.length === 5 && !verifying;
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     setVerifying(true);
-    // No backend yet — mock verification delay.
-    setTimeout(() => navigation.navigate('RoleSelect'), 900);
+    setError('');
+    try {
+      await verifyOtp(otp);
+      // An existing user who already picked a role/finished onboarding skips
+      // straight back into the app instead of re-running role selection.
+      if (onboardingComplete) navigation.getParent()?.navigate('Main');
+      else if (role) navigation.navigate('BasicDetails');
+      else navigation.navigate('RoleSelect');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Invalid OTP. Try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const onResend = async () => {
+    if (seconds > 0 || !pendingMobileNumber) return;
+    setSeconds(RESEND_SECONDS);
+    try {
+      await sendOtp(pendingMobileNumber);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not resend OTP.');
+    }
   };
 
   return (
@@ -58,9 +82,12 @@ export function OtpScreen({ navigation }: Props) {
           <View style={{ marginTop: spacing.sm }}>
             <OtpInput value={otp} onChange={setOtp} />
           </View>
-          <Text style={styles.resend}>
-            {seconds > 0 ? `Resend OTP in 0:${String(seconds).padStart(2, '0')}` : 'Resend OTP'}
-          </Text>
+          <Pressable onPress={onResend} disabled={seconds > 0}>
+            <Text style={styles.resend}>
+              {seconds > 0 ? `Resend OTP in 0:${String(seconds).padStart(2, '0')}` : 'Resend OTP'}
+            </Text>
+          </Pressable>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
         </View>
 
         <View style={styles.spacer} />
@@ -94,5 +121,6 @@ const styles = StyleSheet.create({
   headingAccent: { ...m3Type.headlineLarge, color: colors.black },
   label: { ...m3Type.labelLarge, color: colors.labelGray },
   resend: { ...m3Type.labelMedium, color: colors.neutral400, marginTop: spacing.lg },
+  errorText: { ...m3Type.labelMedium, color: colors.danger, marginTop: spacing.sm },
   spacer: { flex: 1 },
 });

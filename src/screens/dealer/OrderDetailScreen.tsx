@@ -5,13 +5,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
-import { recentOrders, STATUS_STEPS } from '../../data/dealerMock';
+import { useOrder } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
+
+const STATUS_STEPS = ['Placed', 'Billed', 'In transit', 'Delivered'] as const;
 
 type Props = NativeStackScreenProps<RootStackParamList, 'OrderDetail'>;
 
 export function OrderDetailScreen({ navigation, route }: Props) {
-  const order = recentOrders.find((o) => o.id === route.params.orderId);
+  const { data: order, loading } = useOrder(route.params.orderId);
+
+  if (loading) {
+    return (
+      <Screen backgroundColor={colors.surfaceMuted}>
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundText}>Loading order…</Text>
+        </View>
+      </Screen>
+    );
+  }
 
   if (!order) {
     return (
@@ -27,7 +39,7 @@ export function OrderDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const currentStepIndex = STATUS_STEPS.indexOf(order.status);
+  const currentStepIndex = STATUS_STEPS.indexOf(order.status as (typeof STATUS_STEPS)[number]);
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -41,7 +53,7 @@ export function OrderDetailScreen({ navigation, route }: Props) {
         >
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>{order.orderNo}</Text>
+        <Text style={styles.headerTitle}>{order.order_no}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -83,7 +95,7 @@ export function OrderDetailScreen({ navigation, route }: Props) {
             <View style={styles.divider} />
             <View style={styles.itemRow}>
               <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalAmount}>₹{order.amount.toLocaleString('en-IN')}</Text>
+              <Text style={styles.totalAmount}>₹{Number(order.amount).toLocaleString('en-IN')}</Text>
             </View>
           </View>
         </Card>

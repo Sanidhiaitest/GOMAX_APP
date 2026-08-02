@@ -26,7 +26,7 @@ export function DealerBusinessDetailsScreen({ navigation }: Props) {
   const canContinue = shopName.trim().length > 1 && address.trim().length > 1 && bankUpi.trim().length > 1;
 
   const onContinue = () => {
-    setDealerBusiness({ shopName, gstNumber, address, bankUpi, hasShopPhoto });
+    setDealerBusiness({ shopName, gstNumber, address, bankUpi, hasShopPhoto, outstanding: 0, creditLimit: 0, dueDate: '' });
     navigation.navigate('DealerPendingApproval');
   };
 
