@@ -14,14 +14,24 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, 'MobileNumber'>;
 
 // Node 1:101 — header gradient: linear-gradient(159.8deg, #000000 1.89%, #041F61 74.93%)
 export function MobileNumberScreen({ navigation }: Props) {
-  const { setMobileNumber } = useApp();
+  const { sendOtp } = useApp();
   const [phone, setPhone] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
-  const canSubmit = phone.length === 10;
+  const canSubmit = phone.length === 10 && !sending;
 
-  const onSubmit = () => {
-    setMobileNumber(phone);
-    navigation.navigate('Otp');
+  const onSubmit = async () => {
+    setSending(true);
+    setError('');
+    try {
+      await sendOtp(phone);
+      navigation.navigate('Otp');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not send OTP. Try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -58,7 +68,8 @@ export function MobileNumberScreen({ navigation }: Props) {
 
         <View style={styles.spacer} />
 
-        <Button label="OTP Bhejo" onPress={onSubmit} disabled={!canSubmit} roboto />
+        <Button label={sending ? 'Sending…' : 'OTP Bhejo'} onPress={onSubmit} disabled={!canSubmit} roboto />
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <Text style={styles.terms}>
           Join karke aap <Text style={styles.termsLink}>Terms & Conditions</Text> se agree karte hain
@@ -83,6 +94,7 @@ const styles = StyleSheet.create({
   heading: { ...m3Type.headlineLarge, color: colors.primary700 },
   headingAccent: { ...m3Type.headlineLarge, color: colors.black },
   spacer: { flex: 1 },
+  errorText: { ...m3Type.labelMedium, color: colors.danger, textAlign: 'center', marginTop: spacing.sm },
   terms: { ...m3Type.labelSmall, color: colors.black, textAlign: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },
   termsLink: { color: colors.primary700 },
 });

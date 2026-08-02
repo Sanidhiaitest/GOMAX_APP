@@ -5,13 +5,25 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
-import { CATEGORY_COLOR, catalogProducts, CatalogProduct, ProductCategory } from '../../data/productsMock';
+import { useProducts } from '../../hooks/useSupabaseData';
+import { ProductRow } from '../../services/products';
+
+type ProductCategory = 'Adhesive' | 'Waterproofing' | 'Putty' | 'Cement' | 'Mortar';
+
+const CATEGORY_COLOR: Record<string, { bg: string; fg: string }> = {
+  Adhesive: { bg: '#fff4ec', fg: '#c05336' },
+  Waterproofing: { bg: '#eaf6fb', fg: '#1e7fa8' },
+  Putty: { bg: '#f2eefc', fg: '#6b4fc0' },
+  Cement: { bg: '#eef1f4', fg: '#4a5568' },
+  Mortar: { bg: '#fff8e6', fg: '#b8860b' },
+};
 
 const CATEGORIES: (ProductCategory | 'All')[] = ['All', 'Adhesive', 'Waterproofing', 'Putty', 'Cement', 'Mortar'];
 
 export function ProductsScreen() {
   const [category, setCategory] = useState<ProductCategory | 'All'>('All');
-  const [selected, setSelected] = useState<CatalogProduct | null>(null);
+  const [selected, setSelected] = useState<ProductRow | null>(null);
+  const { data: catalogProducts } = useProducts();
 
   const products = category === 'All' ? catalogProducts : catalogProducts.filter((p) => p.category === category);
 
@@ -41,7 +53,7 @@ export function ProductsScreen() {
             <Pressable key={product.id} style={styles.cardWrap} onPress={() => setSelected(product)}>
               <Card style={styles.card}>
                 <View style={[styles.iconTile, { backgroundColor: tone.bg }]}>
-                  <Ionicons name={product.icon} size={28} color={tone.fg} />
+                  <Ionicons name={product.icon as keyof typeof Ionicons.glyphMap} size={28} color={tone.fg} />
                 </View>
                 <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
                 <Text style={styles.productUnit}>{product.unit}</Text>
@@ -58,13 +70,13 @@ export function ProductsScreen() {
           <View style={styles.sheet}>
             <View style={styles.sheetHandle} />
             <View style={[styles.iconTileLarge, { backgroundColor: CATEGORY_COLOR[selected.category].bg }]}>
-              <Ionicons name={selected.icon} size={36} color={CATEGORY_COLOR[selected.category].fg} />
+              <Ionicons name={selected.icon as keyof typeof Ionicons.glyphMap} size={36} color={CATEGORY_COLOR[selected.category].fg} />
             </View>
             <Text style={styles.sheetName}>{selected.name}</Text>
             <Text style={styles.sheetMeta}>{selected.unit} · ₹{selected.price}</Text>
             <Text style={styles.sheetDescription}>{selected.description}</Text>
             <View style={styles.tagRow}>
-              {selected.usedFor.map((tag) => (
+              {(selected.used_for ?? []).map((tag) => (
                 <Pill key={tag} label={tag} tone="info" size="sm" />
               ))}
             </View>

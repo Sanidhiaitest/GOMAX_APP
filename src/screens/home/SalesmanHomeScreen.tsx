@@ -8,10 +8,13 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { useApp } from '../../state/AppContext';
-import { beatPlan, salesmanTarget, streak, BeatStop } from '../../data/salesmanMock';
+import { useMyBeatPlan, useMyMonthlyAchieved } from '../../hooks/useSupabaseData';
+import { BeatPlanRow } from '../../services/salesman';
 import { RootStackParamList } from '../../navigation/types';
 
-const STATUS_META: Record<BeatStop['status'], { label: string; tone: 'success' | 'warning' | 'neutral'; icon: keyof typeof Ionicons.glyphMap }> = {
+const MONTHLY_TARGET = 250000;
+
+const STATUS_META: Record<BeatPlanRow['status'], { label: string; tone: 'success' | 'warning' | 'neutral'; icon: keyof typeof Ionicons.glyphMap }> = {
   visited: { label: 'Visited', tone: 'success', icon: 'checkmark-circle' },
   pending: { label: 'Pending', tone: 'warning', icon: 'time-outline' },
   skipped: { label: 'Skipped', tone: 'neutral', icon: 'close-circle-outline' },
@@ -27,7 +30,9 @@ const QUICK_ACTIONS: { key: string; label: string; icon: keyof typeof Ionicons.g
 export function SalesmanHomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { fullName } = useApp();
-  const pct = Math.min(100, Math.round((salesmanTarget.achieved / salesmanTarget.target) * 100));
+  const { data: beatPlan } = useMyBeatPlan();
+  const { data: achieved } = useMyMonthlyAchieved();
+  const pct = Math.min(100, Math.round((achieved / MONTHLY_TARGET) * 100));
 
   const onQuickAction = (key: string, label: string) => {
     if (key === 'order') return navigation.navigate('OrderPlacement');
@@ -39,23 +44,19 @@ export function SalesmanHomeScreen() {
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
         <Text style={styles.greeting}>Namaste, {fullName || 'Salesman'}</Text>
-        <View style={styles.streakBadge}>
-          <Ionicons name="flame" size={12} color={colors.orange500} />
-          <Text style={styles.streakText}>{streak.label}</Text>
-        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Card style={styles.targetCard}>
           <Text style={styles.targetLabel}>THIS MONTH&apos;S TARGET</Text>
           <Text style={styles.targetValue}>
-            ₹{salesmanTarget.achieved.toLocaleString('en-IN')}
-            <Text style={styles.targetOf}> / ₹{salesmanTarget.target.toLocaleString('en-IN')}</Text>
+            ₹{achieved.toLocaleString('en-IN')}
+            <Text style={styles.targetOf}> / ₹{MONTHLY_TARGET.toLocaleString('en-IN')}</Text>
           </Text>
           <View style={styles.targetBarTrack}>
             <View style={[styles.targetBarFill, { width: `${pct}%` }]} />
           </View>
-          <Text style={styles.targetHint}>{pct}% achieved · {salesmanTarget.daysLeft} days left</Text>
+          <Text style={styles.targetHint}>{pct}% achieved this month</Text>
         </Card>
 
         <Text style={styles.sectionTitle}>Quick actions</Text>
@@ -76,18 +77,18 @@ export function SalesmanHomeScreen() {
         </View>
         <View style={{ gap: spacing.md }}>
           {beatPlan.map((stop) => {
-            const meta = STATUS_META[stop.status];
+            const meta = STATUS_META[stop.status as BeatPlanRow['status']];
             return (
               <Pressable key={stop.id} onPress={() => navigation.navigate('DealerDetail', { dealerId: stop.id })}>
                 <Card style={styles.stopRow}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.stopName}>{stop.dealerName}</Text>
+                    <Text style={styles.stopName}>{stop.dealer_name}</Text>
                     <Text style={styles.stopArea}>{stop.area}</Text>
                   </View>
                   <View style={styles.stopRight}>
                     <Pill label={meta.label} tone={meta.tone} icon={meta.icon} size="sm" />
-                    {stop.outstanding > 0 ? (
-                      <Text style={styles.stopOutstanding}>₹{stop.outstanding.toLocaleString('en-IN')} due</Text>
+                    {stop.last_order_amount ? (
+                      <Text style={styles.stopOutstanding}>Last order ₹{Number(stop.last_order_amount).toLocaleString('en-IN')}</Text>
                     ) : null}
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={colors.neutral400} />

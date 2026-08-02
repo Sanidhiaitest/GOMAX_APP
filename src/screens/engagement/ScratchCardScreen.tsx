@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,8 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Screen } from '../../components/Screen';
 import { RewardBurst, UnlockReveal } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
-import { initialScratchCards, ScratchCard } from '../../data/scratchCardsMock';
+import { useMyScratchCardsJoined } from '../../hooks/useSupabaseData';
+import { scratchCard as scratchCardService, MyScratchCard } from '../../services/engagement';
 import { RootStackParamList } from '../../navigation/types';
 import { successHaptic } from '../../utils/haptics';
 
@@ -17,19 +18,27 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ScratchCards'>;
 // react-native-skia) would be a good upgrade once this loop is validated.
 export function ScratchCardScreen({ navigation }: Props) {
   const { addRuns } = useApp();
-  const [cards, setCards] = useState<ScratchCard[]>(initialScratchCards);
+  const { data: loadedCards, reload } = useMyScratchCardsJoined();
+  const [cards, setCards] = useState<MyScratchCard[]>([]);
   const [burstTriggers, setBurstTriggers] = useState<Record<string, number>>({});
-  const flips = useRef<Record<string, Animated.Value>>(
-    Object.fromEntries(initialScratchCards.map((c) => [c.id, new Animated.Value(0)]))
-  ).current;
+  const flips = useRef<Record<string, Animated.Value>>({}).current;
 
-  const reveal = (card: ScratchCard) => {
+  useEffect(() => {
+    setCards(loadedCards);
+    loadedCards.forEach((c) => {
+      if (!flips[c.id]) flips[c.id] = new Animated.Value(c.scratched ? 1 : 0);
+    });
+  }, [loadedCards]);
+
+  const reveal = async (card: MyScratchCard) => {
     if (card.scratched) return;
     Animated.spring(flips[card.id], { toValue: 1, useNativeDriver: true, friction: 8 }).start();
-    addRuns(card.reward);
     setCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, scratched: true } : c)));
     setBurstTriggers((prev) => ({ ...prev, [card.id]: (prev[card.id] ?? 0) + 1 }));
     successHaptic();
+    await scratchCardService(card.id);
+    await addRuns(card.reward);
+    reload();
   };
 
   return (

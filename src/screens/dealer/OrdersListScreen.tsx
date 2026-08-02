@@ -7,8 +7,10 @@ import { colors, m3Type, spacing } from '../../theme';
 import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
-import { recentOrders, OrderStatus } from '../../data/dealerMock';
+import { useMyOrders } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
+
+type OrderStatus = 'Placed' | 'Billed' | 'In transit' | 'Delivered';
 
 const STATUS_META: Record<OrderStatus, { tone: 'neutral' | 'warning' | 'info' | 'success'; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }> = {
   Placed: { tone: 'neutral', icon: 'ellipse-outline' },
@@ -19,6 +21,7 @@ const STATUS_META: Record<OrderStatus, { tone: 'neutral' | 'warning' | 'info' | 
 
 export function OrdersListScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { data: recentOrders } = useMyOrders();
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
@@ -51,12 +54,19 @@ export function OrdersListScreen() {
           <Pressable onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}>
             <Card style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.orderNo}>{item.orderNo}</Text>
-                <Text style={styles.orderDate}>{item.date} · {item.items.length} item{item.items.length > 1 ? 's' : ''}</Text>
+                <Text style={styles.orderNo}>{item.order_no}</Text>
+                <Text style={styles.orderDate}>
+                  {new Date(item.order_date).toLocaleDateString()} · {item.items.length} item{item.items.length > 1 ? 's' : ''}
+                </Text>
               </View>
               <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                <Text style={styles.amount}>₹{item.amount.toLocaleString('en-IN')}</Text>
-                <Pill label={item.status} tone={STATUS_META[item.status].tone} icon={STATUS_META[item.status].icon} size="sm" />
+                <Text style={styles.amount}>₹{Number(item.amount).toLocaleString('en-IN')}</Text>
+                <Pill
+                  label={item.status}
+                  tone={STATUS_META[item.status as OrderStatus].tone}
+                  icon={STATUS_META[item.status as OrderStatus].icon}
+                  size="sm"
+                />
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />
             </Card>

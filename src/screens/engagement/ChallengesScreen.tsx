@@ -7,8 +7,15 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { PressableScale, RewardBurst, UnlockReveal } from '../../components/animations';
-import { badges, Challenge, leaderboard, weeklyChallenges } from '../../data/challengesMock';
 import { useApp } from '../../state/AppContext';
+import {
+  useChallenges,
+  useMyChallengeProgress,
+  useBadges,
+  useMyUnlockedBadges,
+  useLeaderboard,
+} from '../../hooks/useSupabaseData';
+import { claimChallenge as claimChallengeService, ChallengeRow } from '../../services/engagement';
 import { RootStackParamList } from '../../navigation/types';
 import { successHaptic } from '../../utils/haptics';
 
@@ -25,17 +32,29 @@ const TABS: { key: Tab; label: string }[] = [
 // shared earlier (Challenges / Leaderboard / Badges tabs).
 export function ChallengesScreen({ navigation }: Props) {
   const [tab, setTab] = useState<Tab>('challenges');
-  const { addRuns } = useApp();
-  const [claimed, setClaimed] = useState<Record<string, boolean>>({});
+  const { refreshProfile } = useApp();
+  const { data: weeklyChallenges } = useChallenges();
+  const { data: myProgress, reload: reloadProgress } = useMyChallengeProgress();
+  const { data: badges } = useBadges();
+  const { data: unlockedBadges } = useMyUnlockedBadges();
+  const { data: leaderboard } = useLeaderboard();
+  const [claiming, setClaiming] = useState<Record<string, boolean>>({});
   const [burstTriggers, setBurstTriggers] = useState<Record<string, number>>({});
 
-  const onClaim = (c: Challenge) => {
-    if (claimed[c.id]) return;
-    setClaimed((prev) => ({ ...prev, [c.id]: true }));
-    setBurstTriggers((prev) => ({ ...prev, [c.id]: (prev[c.id] ?? 0) + 1 }));
-    const runsMatch = c.reward.match(/(\d+)\s*Runs/i);
-    if (runsMatch) addRuns(Number(runsMatch[1]));
-    successHaptic();
+  const progressFor = (challengeId: string) => myProgress.find((p) => p.challenge_id === challengeId);
+  const unlockedBadgeIds = new Set(unlockedBadges.map((b) => b.badge_id));
+
+  const onClaim = async (c: ChallengeRow) => {
+    if (progressFor(c.id)?.completed_at || claiming[c.id]) return;
+    setClaiming((prev) => ({ ...prev, [c.id]: true }));
+    try {
+      await claimChallengeService(c);
+      setBurstTriggers((prev) => ({ ...prev, [c.id]: (prev[c.id] ?? 0) + 1 }));
+      successHaptic();
+      await Promise.all([reloadProgress(), refreshProfile()]);
+    } finally {
+      setClaiming((prev) => ({ ...prev, [c.id]: false }));
+    }
   };
 
   return (
@@ -68,22 +87,23 @@ export function ChallengesScreen({ navigation }: Props) {
         {tab === 'challenges' ? (
           <View style={{ gap: spacing.md }}>
             {weeklyChallenges.map((c) => {
-              const pct = Math.min(100, Math.round((c.progress / c.target) * 100));
-              const done = c.progress >= c.target;
-              const isClaimed = claimed[c.id];
+              const progress = progressFor(c.id)?.progress ?? 0;
+              const pct = Math.min(100, Math.round((progress / c.target) * 100));
+              const done = progress >= c.target;
+              const isClaimed = !!progressFor(c.id)?.completed_at;
               return (
                 <Card key={c.id} style={done ? styles.challengeCardDone : undefined}>
                   <RewardBurst trigger={burstTriggers[c.id] ?? 0} count={16} />
                   <View style={styles.challengeHeaderRow}>
                     <Text style={styles.challengeTitle}>{c.title}</Text>
-                    <Text style={styles.challengeReward}>{c.reward}</Text>
+                    <Text style={styles.challengeReward}>{c.reward_label}</Text>
                   </View>
                   <Text style={styles.challengeSubtitle}>{c.subtitle}</Text>
                   <View style={styles.progressTrack}>
                     <View style={[styles.progressFill, { width: `${pct}%` }, done && styles.progressFillDone]} />
                   </View>
                   {!done ? (
-                    <Text style={styles.progressLabel}>{`${c.progress} / ${c.target}`}</Text>
+                    <Text style={styles.progressLabel}>{`${progress} / ${c.target}`}</Text>
                   ) : (
                     <View style={styles.claimRow}>
                       {isClaimed ? (
@@ -118,17 +138,20 @@ export function ChallengesScreen({ navigation }: Props) {
 
         {tab === 'badges' ? (
           <View style={styles.badgeGrid}>
-            {badges.map((badge) => (
-              <Card key={badge.id} style={[styles.badgeCard, !badge.unlocked && styles.badgeCardLocked]}>
-                <Ionicons
-                  name={badge.unlocked ? 'ribbon' : 'lock-closed-outline'}
-                  size={24}
-                  color={badge.unlocked ? colors.primary700 : colors.neutral400}
-                />
-                <Text style={[styles.badgeTitle, !badge.unlocked && styles.badgeTitleLocked]}>{badge.title}</Text>
-                <Text style={styles.badgeSubtitle}>{badge.subtitle}</Text>
-              </Card>
-            ))}
+            {badges.map((badge) => {
+              const unlocked = unlockedBadgeIds.has(badge.id);
+              return (
+                <Card key={badge.id} style={[styles.badgeCard, !unlocked && styles.badgeCardLocked]}>
+                  <Ionicons
+                    name={unlocked ? 'ribbon' : 'lock-closed-outline'}
+                    size={24}
+                    color={unlocked ? colors.primary700 : colors.neutral400}
+                  />
+                  <Text style={[styles.badgeTitle, !unlocked && styles.badgeTitleLocked]}>{badge.title}</Text>
+                  <Text style={styles.badgeSubtitle}>{badge.subtitle}</Text>
+                </Card>
+              );
+            })}
           </View>
         ) : null}
       </ScrollView>

@@ -6,12 +6,14 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Screen } from '../../components/Screen';
-import { beatPlan } from '../../data/salesmanMock';
+import { useMyBeatPlan } from '../../hooks/useSupabaseData';
+import { updateBeatStop } from '../../services/salesman';
 import { RootStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DealerDetail'>;
 
 export function DealerDetailScreen({ navigation, route }: Props) {
+  const { data: beatPlan, reload } = useMyBeatPlan();
   const dealer = beatPlan.find((d) => d.id === route.params.dealerId);
 
   if (!dealer) {
@@ -28,7 +30,11 @@ export function DealerDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const utilisation = Math.min(100, Math.round((dealer.outstanding / dealer.creditLimit) * 100));
+  const onLogVisit = async () => {
+    await updateBeatStop(dealer.id, { status: 'visited' });
+    await reload();
+    Alert.alert('Visit logged', `Marked ${dealer.dealer_name} as visited for today.`);
+  };
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -42,7 +48,7 @@ export function DealerDetailScreen({ navigation, route }: Props) {
         >
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerTitle}>{dealer.dealerName}</Text>
+        <Text style={styles.headerTitle}>{dealer.dealer_name}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -56,45 +62,29 @@ export function DealerDetailScreen({ navigation, route }: Props) {
             <Ionicons name="call-outline" size={18} color={colors.neutral500} />
             <Text style={styles.infoText}>{dealer.phone}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="time-outline" size={18} color={colors.neutral500} />
-            <Text style={styles.infoText}>Last visit: {dealer.lastVisit}</Text>
-          </View>
         </Card>
 
         <View style={styles.actionRow}>
-          <Pressable style={styles.actionButton} onPress={() => Linking.openURL(`tel:${dealer.phone.replace(/\s/g, '')}`)}>
+          <Pressable style={styles.actionButton} onPress={() => Linking.openURL(`tel:${(dealer.phone ?? '').replace(/\s/g, '')}`)}>
             <Ionicons name="call" size={18} color={colors.primary700} />
             <Text style={styles.actionButtonText}>Call</Text>
           </Pressable>
           <Pressable
             style={styles.actionButton}
-            onPress={() => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(dealer.address)}`)}
+            onPress={() => Linking.openURL(`https://maps.google.com/?q=${encodeURIComponent(dealer.address ?? '')}`)}
           >
             <Ionicons name="navigate" size={18} color={colors.primary700} />
             <Text style={styles.actionButtonText}>Navigate</Text>
           </Pressable>
-          <Pressable
-            style={styles.actionButton}
-            onPress={() => Alert.alert('Visit logged', `Marked ${dealer.dealerName} as visited for today.`)}
-          >
+          <Pressable style={styles.actionButton} onPress={onLogVisit}>
             <Ionicons name="checkmark-circle" size={18} color={colors.primary700} />
             <Text style={styles.actionButtonText}>Log visit</Text>
           </Pressable>
         </View>
 
         <Card>
-          <Text style={styles.sectionTitle}>Credit</Text>
-          <Text style={styles.outstandingValue}>₹{dealer.outstanding.toLocaleString('en-IN')}</Text>
-          <View style={styles.barTrack}>
-            <View style={[styles.barFill, { width: `${utilisation}%` }]} />
-          </View>
-          <Text style={styles.hint}>{utilisation}% of ₹{dealer.creditLimit.toLocaleString('en-IN')} limit used</Text>
-        </Card>
-
-        <Card>
           <Text style={styles.sectionTitle}>Last order</Text>
-          <Text style={styles.lastOrderAmount}>₹{dealer.lastOrderAmount.toLocaleString('en-IN')}</Text>
+          <Text style={styles.lastOrderAmount}>₹{Number(dealer.last_order_amount ?? 0).toLocaleString('en-IN')}</Text>
         </Card>
 
         <Button label="Place order for this dealer" onPress={() => navigation.navigate('OrderPlacement')} />

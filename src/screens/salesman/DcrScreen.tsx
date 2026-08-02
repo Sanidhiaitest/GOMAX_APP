@@ -9,12 +9,13 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { SelectModal } from '../../components/SelectModal';
-import { beatPlan, DcrEntry, todaysDcrEntries } from '../../data/salesmanMock';
+import { useMyBeatPlan, useTodaysDcr } from '../../hooks/useSupabaseData';
+import { addDcrEntry, DcrRow } from '../../services/salesman';
 import { RootStackParamList } from '../../navigation/types';
 
-const OUTCOMES: DcrEntry['outcome'][] = ['Order taken', 'Payment collected', 'No order', 'Dealer closed'];
+const OUTCOMES: DcrRow['outcome'][] = ['Order taken', 'Payment collected', 'No order', 'Dealer closed'];
 
-const OUTCOME_META: Record<DcrEntry['outcome'], { tone: 'success' | 'info' | 'neutral' | 'danger'; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }> = {
+const OUTCOME_META: Record<DcrRow['outcome'], { tone: 'success' | 'info' | 'neutral' | 'danger'; icon: keyof typeof import('@expo/vector-icons').Ionicons.glyphMap }> = {
   'Order taken': { tone: 'success', icon: 'receipt-outline' },
   'Payment collected': { tone: 'info', icon: 'cash-outline' },
   'No order': { tone: 'neutral', icon: 'remove-circle-outline' },
@@ -23,24 +24,29 @@ const OUTCOME_META: Record<DcrEntry['outcome'], { tone: 'success' | 'info' | 'ne
 
 export function DcrScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [entries, setEntries] = useState<DcrEntry[]>(todaysDcrEntries);
+  const { data: beatPlan } = useMyBeatPlan();
+  const { data: entries, reload } = useTodaysDcr();
   const [dealerModal, setDealerModal] = useState(false);
   const [outcomeModal, setOutcomeModal] = useState(false);
   const [dealer, setDealer] = useState('');
-  const [outcome, setOutcome] = useState<DcrEntry['outcome'] | ''>('');
+  const [outcome, setOutcome] = useState<DcrRow['outcome'] | ''>('');
   const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const canSubmit = dealer.length > 0 && outcome.length > 0;
+  const canSubmit = dealer.length > 0 && outcome.length > 0 && !submitting;
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!canSubmit) return;
-    setEntries((prev) => [
-      { id: String(Date.now()), dealerName: dealer, time: 'Just now', outcome: outcome as DcrEntry['outcome'], notes },
-      ...prev,
-    ]);
-    setDealer('');
-    setOutcome('');
-    setNotes('');
+    setSubmitting(true);
+    try {
+      await addDcrEntry({ dealerName: dealer, outcome: outcome as DcrRow['outcome'], notes });
+      await reload();
+      setDealer('');
+      setOutcome('');
+      setNotes('');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -86,7 +92,7 @@ export function DcrScreen() {
           />
 
           <View style={{ marginTop: spacing.lg }}>
-            <Button label="Log visit" onPress={onSubmit} disabled={!canSubmit} icon={null} />
+            <Button label={submitting ? 'Logging…' : 'Log visit'} onPress={onSubmit} disabled={!canSubmit} icon={null} />
           </View>
         </Card>
 
@@ -101,11 +107,16 @@ export function DcrScreen() {
             {entries.map((entry) => (
               <Card key={entry.id}>
                 <View style={styles.entryHeaderRow}>
-                  <Text style={styles.entryDealer}>{entry.dealerName}</Text>
-                  <Text style={styles.entryTime}>{entry.time}</Text>
+                  <Text style={styles.entryDealer}>{entry.dealer_name}</Text>
+                  <Text style={styles.entryTime}>{new Date(entry.entry_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                 </View>
                 <View style={{ marginTop: 4, marginBottom: entry.notes ? 4 : 0 }}>
-                  <Pill label={entry.outcome} tone={OUTCOME_META[entry.outcome].tone} icon={OUTCOME_META[entry.outcome].icon} size="sm" />
+                  <Pill
+                    label={entry.outcome}
+                    tone={OUTCOME_META[entry.outcome as DcrRow['outcome']].tone}
+                    icon={OUTCOME_META[entry.outcome as DcrRow['outcome']].icon}
+                    size="sm"
+                  />
                 </View>
                 {entry.notes ? <Text style={styles.entryNotes}>{entry.notes}</Text> : null}
               </Card>
@@ -117,7 +128,7 @@ export function DcrScreen() {
       <SelectModal
         visible={dealerModal}
         title="Select dealer"
-        options={beatPlan.map((d) => d.dealerName)}
+        options={beatPlan.map((d) => d.dealer_name)}
         selected={dealer}
         onSelect={setDealer}
         onClose={() => setDealerModal(false)}
@@ -127,7 +138,7 @@ export function DcrScreen() {
         title="Select outcome"
         options={OUTCOMES}
         selected={outcome}
-        onSelect={(v) => setOutcome(v as DcrEntry['outcome'])}
+        onSelect={(v) => setOutcome(v as DcrRow['outcome'])}
         onClose={() => setOutcomeModal(false)}
       />
     </Screen>
