@@ -36,6 +36,7 @@ export function TeamScreen({ navigation }: Props) {
   }, []);
 
   const totalCommission = team.reduce((sum, m) => sum + m.commissionGenerated, 0);
+  const totalBusinessVolume = team.filter((m) => m.isDirectReport).reduce((sum, m) => sum + m.businessVolume, 0);
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -50,10 +51,16 @@ export function TeamScreen({ navigation }: Props) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Card style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>TOTAL COMMISSION FROM YOUR TEAM</Text>
-          <Text style={styles.summaryValue}>₹{totalCommission.toLocaleString('en-IN')}</Text>
-        </Card>
+        <View style={styles.summaryRow}>
+          <Card style={[styles.summaryCard, { flex: 1 }]}>
+            <Text style={styles.summaryLabel}>YOUR COMMISSION</Text>
+            <Text style={styles.summaryValue}>₹{totalCommission.toLocaleString('en-IN')}</Text>
+          </Card>
+          <Card style={[styles.summaryCard, styles.summaryCardVolume, { flex: 1 }]}>
+            <Text style={styles.summaryLabel}>TEAM BUSINESS DONE</Text>
+            <Text style={styles.summaryValue}>₹{totalBusinessVolume.toLocaleString('en-IN')}</Text>
+          </Card>
+        </View>
 
         {!loading && team.length === 0 ? (
           <View style={styles.empty}>
@@ -74,7 +81,8 @@ export function TeamScreen({ navigation }: Props) {
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
                   <Pill label={member.role} tone={ROLE_TONE[member.role] ?? 'neutral'} size="sm" />
-                  <Text style={styles.commission}>₹{member.commissionGenerated.toLocaleString('en-IN')}</Text>
+                  <Text style={styles.commission}>₹{member.commissionGenerated.toLocaleString('en-IN')} earned</Text>
+                  <Text style={styles.businessVolume}>₹{member.businessVolume.toLocaleString('en-IN')} business</Text>
                 </View>
               </Card>
             ))}
@@ -91,7 +99,9 @@ const styles = StyleSheet.create({
   title: { ...m3Type.titleLarge, color: colors.textPrimary },
   subtitle: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500, marginTop: 2 },
   content: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxxl, gap: spacing.lg },
+  summaryRow: { flexDirection: 'row', gap: spacing.md },
   summaryCard: { backgroundColor: colors.navy800 },
+  summaryCardVolume: { backgroundColor: colors.primary700 },
   summaryLabel: { ...m3Type.labelSmall, color: 'rgba(255,255,255,0.6)', letterSpacing: 0.6 },
   summaryValue: { ...m3Type.headlineMedium, fontSize: 26, color: colors.white, marginTop: 4 },
   empty: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xxxl },
@@ -110,4 +120,5 @@ const styles = StyleSheet.create({
   name: { ...m3Type.titleMedium, fontSize: 14, color: colors.textPrimary },
   joined: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500, marginTop: 2 },
   commission: { ...m3Type.labelMedium, fontSize: 12, color: colors.success, fontWeight: '700' },
+  businessVolume: { ...m3Type.labelMedium, fontSize: 11, color: colors.neutral500, marginTop: 1 },
 });

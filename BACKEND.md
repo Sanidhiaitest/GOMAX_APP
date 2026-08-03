@@ -92,3 +92,19 @@ answer (`request_password_reset_otp` + `reset_password_with_otp`).
 - `gift_catalogue.market_value_inr` needs to be set per gift for TDS to be
   calculated on gift claims (defaults to skipped if null) — set this when
   building gift CRUD.
+
+## Admin CRUD (gifts & challenges)
+- Admin → Dashboard → "Manage Gift Catalogue" / "Manage Challenges" — create,
+  edit, and hide (soft-delete via `active` toggle) both, from the app.
+  No more direct-SQL seeding needed for day-to-day operation.
+- Gift `market_value_inr` is settable here — required for TDS to calculate
+  on gift claims (skipped if left blank).
+
+## Business volume (My Team)
+- `get_my_downline()` now also returns `business_volume`: the total ₹ value
+  of coupons scanned by that person AND everyone in their own sub-team below
+  them — not just the commission the viewer personally earned from them.
+  This is the number to use for volume-based schemes/annual bonuses.
+- The Team screen's top-line "Team business done" figure sums only direct
+  reports' business_volume (each one's figure already rolls up everyone
+  below them — summing all rows would double-count).

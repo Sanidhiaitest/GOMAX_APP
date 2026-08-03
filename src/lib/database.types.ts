@@ -661,7 +661,9 @@ export type Database = {
           full_name: string
           role: string
           created_at: string
+          referrer_id: string | null
           commission_generated: number
+          business_volume: number
         }[]
       }
       check_and_record_tds: {

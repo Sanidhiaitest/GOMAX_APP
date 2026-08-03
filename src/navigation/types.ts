@@ -35,6 +35,8 @@ export type RootStackParamList = {
   Ledger: undefined;
   AdminLogin: undefined;
   AdminMain: undefined;
+  AdminGiftCatalogue: undefined;
+  AdminChallengesManage: undefined;
 };
 
 declare global {

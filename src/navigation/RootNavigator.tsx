@@ -10,6 +10,8 @@ import { TeamScreen } from '../screens/team/TeamScreen';
 import { LedgerScreen } from '../screens/ledger/LedgerScreen';
 import { AdminLoginScreen } from '../screens/admin/AdminLoginScreen';
 import { AdminTabNavigator } from './AdminTabNavigator';
+import { AdminGiftCatalogueScreen } from '../screens/admin/AdminGiftCatalogueScreen';
+import { AdminChallengesManageScreen } from '../screens/admin/AdminChallengesManageScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,6 +27,8 @@ export function RootNavigator() {
       <Stack.Screen name="Ledger" component={LedgerScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
       <Stack.Screen name="AdminMain" component={AdminTabNavigator} />
+      <Stack.Screen name="AdminGiftCatalogue" component={AdminGiftCatalogueScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="AdminChallengesManage" component={AdminChallengesManageScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

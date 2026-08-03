@@ -103,6 +103,96 @@ export async function decideRedemption(
   return { request: data, tds };
 }
 
+export type GiftInput = {
+  name: string;
+  description: string;
+  runsCost: number;
+  stock: number;
+  marketValueInr: number | null;
+};
+
+export async function listAllGiftsForAdmin(): Promise<GiftRow[]> {
+  const { data, error } = await supabase.from('gift_catalogue').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createGift(input: GiftInput): Promise<GiftRow> {
+  const { data, error } = await supabase
+    .from('gift_catalogue')
+    .insert({
+      name: input.name,
+      description: input.description || null,
+      runs_cost: input.runsCost,
+      stock: input.stock,
+      market_value_inr: input.marketValueInr,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateGift(id: string, input: Partial<GiftInput> & { active?: boolean }): Promise<GiftRow> {
+  const patch: TablesUpdate<'gift_catalogue'> = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.description !== undefined) patch.description = input.description || null;
+  if (input.runsCost !== undefined) patch.runs_cost = input.runsCost;
+  if (input.stock !== undefined) patch.stock = input.stock;
+  if (input.marketValueInr !== undefined) patch.market_value_inr = input.marketValueInr;
+  if (input.active !== undefined) patch.active = input.active;
+
+  const { data, error } = await supabase.from('gift_catalogue').update(patch).eq('id', id).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
+export type ChallengeRow = Tables<'challenges'>;
+export type ChallengeInput = {
+  title: string;
+  subtitle: string;
+  target: number;
+  rewardRuns: number;
+  rewardLabel: string;
+};
+
+export async function listAllChallengesForAdmin(): Promise<ChallengeRow[]> {
+  const { data, error } = await supabase.from('challenges').select('*').order('title');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createChallenge(input: ChallengeInput): Promise<ChallengeRow> {
+  const { data, error } = await supabase
+    .from('challenges')
+    .insert({
+      title: input.title,
+      subtitle: input.subtitle || null,
+      target: input.target,
+      reward_runs: input.rewardRuns,
+      reward_points: 0,
+      reward_label: input.rewardLabel || `+${input.rewardRuns} Runs`,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateChallenge(id: string, input: Partial<ChallengeInput> & { active?: boolean }): Promise<ChallengeRow> {
+  const patch: TablesUpdate<'challenges'> = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.subtitle !== undefined) patch.subtitle = input.subtitle || null;
+  if (input.target !== undefined) patch.target = input.target;
+  if (input.rewardRuns !== undefined) patch.reward_runs = input.rewardRuns;
+  if (input.rewardLabel !== undefined) patch.reward_label = input.rewardLabel;
+  if (input.active !== undefined) patch.active = input.active;
+
+  const { data, error } = await supabase.from('challenges').update(patch).eq('id', id).select('*').single();
+  if (error) throw error;
+  return data;
+}
+
 export async function listGiftRedemptions(status?: 'pending' | 'shipped' | 'delivered'): Promise<
   (GiftRedemptionRow & { gift: GiftRow | null; user: ProfileRow | null })[]
 > {
