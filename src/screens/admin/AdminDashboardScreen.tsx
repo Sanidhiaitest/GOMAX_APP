@@ -64,7 +64,7 @@ export function AdminDashboardScreen() {
             value={String(pendingRedemptions.length)}
             label="Redemptions due"
             iconColor={colors.warning}
-            iconBg="#fff4e0"
+            iconBg={colors.warningBg}
           />
         </View>
 
@@ -85,7 +85,7 @@ export function AdminDashboardScreen() {
 
           <Pressable onPress={() => navigation.navigate('Gifts')}>
             <Card style={styles.attentionRow}>
-              <View style={[styles.attentionIcon, { backgroundColor: '#fff4e0' }]}>
+              <View style={[styles.attentionIcon, { backgroundColor: colors.warningBg }]}>
                 <Ionicons name="gift-outline" size={20} color={colors.warning} />
               </View>
               <View style={{ flex: 1 }}>

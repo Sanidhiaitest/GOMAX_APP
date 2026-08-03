@@ -40,7 +40,7 @@ export function TeamScreen({ navigation }: Props) {
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <View>
@@ -72,7 +72,7 @@ export function TeamScreen({ navigation }: Props) {
                   <Text style={styles.name}>{member.fullName}</Text>
                   <Text style={styles.joined}>Joined {new Date(member.joinedAt).toLocaleDateString()}</Text>
                 </View>
-                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                <View style={{ alignItems: 'flex-end', gap: spacing.xs }}>
                   <Pill label={member.role} tone={ROLE_TONE[member.role] ?? 'neutral'} size="sm" />
                   <Text style={styles.commission}>₹{member.commissionGenerated.toLocaleString('en-IN')}</Text>
                 </View>

@@ -57,7 +57,7 @@ export function AdminSetupScreen({ navigation }: Props) {
     <Screen>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}>
-          <Pressable onPress={() => navigation.goBack()} hitSlop={8}>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={8} accessibilityRole="button" accessibilityLabel="Go back">
             <Ionicons name="chevron-back" size={22} color={colors.secondary700} />
           </Pressable>
           <Text style={styles.headerTitle}>Set up Admin account</Text>

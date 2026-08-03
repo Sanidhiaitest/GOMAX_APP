@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   giftName: { ...m3Type.titleMedium, fontSize: 13, color: colors.textPrimary },
-  giftCostRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  giftCostRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   giftCost: { ...m3Type.labelLarge, fontSize: 13, color: colors.walletRunsAccent, fontWeight: '700' },
   giftCostDisabled: { color: colors.neutral400 },
   sectionTitle: { ...m3Type.titleMediumSemiBold, color: colors.textPrimary, marginTop: spacing.sm },

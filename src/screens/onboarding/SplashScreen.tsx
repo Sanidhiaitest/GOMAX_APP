@@ -65,6 +65,15 @@ export function SplashScreen({ navigation }: Props) {
       <Pressable style={styles.adminLink} onPress={goToAdminLogin} hitSlop={16} disabled={checkingAdmin}>
         <Text style={styles.adminLinkText}>{checkingAdmin ? 'Checking…' : 'Staff / Admin login'}</Text>
       </Pressable>
+      {__DEV__ ? (
+        <Pressable
+          style={styles.devLink}
+          onPress={() => navigation.getParent()?.navigate('DesignSystem')}
+          hitSlop={16}
+        >
+          <Text style={styles.devLinkText}>Design system</Text>
+        </Pressable>
+      ) : null}
     </LinearGradient>
   );
 }
@@ -73,4 +82,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   adminLink: { position: 'absolute', bottom: 40 },
   adminLinkText: { ...m3Type.labelLarge, fontSize: 12, color: 'rgba(255,255,255,0.35)' },
+  devLink: { position: 'absolute', bottom: 12 },
+  devLinkText: { ...m3Type.labelSmall, fontSize: 10, color: 'rgba(255,255,255,0.2)' },
 });

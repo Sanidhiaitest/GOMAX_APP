@@ -62,7 +62,7 @@ export function LedgerScreen({ navigation }: Props) {
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.title}>Full Ledger</Text>

@@ -61,7 +61,7 @@ export function LoginScreen({ navigation }: Props) {
           <Text style={styles.heading}>GoMax mein</Text>
           <Text style={styles.headingAccent}>Wapas Aaiye! 👋</Text>
 
-          <View style={{ marginTop: 32, gap: spacing.lg }}>
+          <View style={{ marginTop: spacing.xxxl, gap: spacing.lg }}>
             <TextField
               label="MOBILE NUMBER"
               prefix="🇮🇳 +91"

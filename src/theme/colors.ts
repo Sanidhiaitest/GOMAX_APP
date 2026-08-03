@@ -33,6 +33,10 @@ export const colors = {
   skipGray: '#595c5d',
   gradientNavyDeep: '#002040', // splash + scan gradient stop
   gradientNavyIndigo: '#041F61', // mobile number / otp header gradient stop
+  scanSuccessGreen: '#14c87c', // ScanScreen "verified" dot + history checkmark (dark UI, not the light-surface `success` token)
+  scanActiveTabText: '#ff8a6b', // ScanScreen active Scan/History segment label
+  scanCaptionLight: '#e9e9f4', // ScanScreen caption text on the dark camera view
+  warningBg: '#fff4e0', // shared warning-tinted icon/pill background (matches Pill's `warning` tone bg)
 
   // --- Dark "Light/Neutral" collection used on Scan + Wallet ---
   darkNeutral700: '#474D6A',
