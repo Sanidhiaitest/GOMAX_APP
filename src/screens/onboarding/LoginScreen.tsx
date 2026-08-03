@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -13,7 +13,9 @@ import { OnboardingStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Login'>;
 
 // Same header/card template as the old MobileNumberScreen (node 1:101) —
-// gradient photo header + white rounded card underneath.
+// gradient photo header + white rounded card underneath. Wrapped in a
+// ScrollView so the signup link stays reachable on short viewports (e.g.
+// browser windows) instead of being pushed off-screen with no way to scroll.
 export function LoginScreen({ navigation }: Props) {
   const { logIn } = useApp();
   const [mobile, setMobile] = useState('');
@@ -39,65 +41,68 @@ export function LoginScreen({ navigation }: Props) {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <StatusBar style="light" />
-      <LinearGradient
-        colors={[colors.black, colors.gradientNavyIndigo]}
-        start={{ x: 0.18, y: 0 }}
-        end={{ x: 0.82, y: 1 }}
-        locations={[0.019, 0.75]}
-        style={styles.header}
-      >
-        {photos.onboardingMobileNumber ? (
-          <Image source={photos.onboardingMobileNumber} style={StyleSheet.absoluteFill} resizeMode="cover" />
-        ) : null}
-      </LinearGradient>
+      <ScrollView style={styles.flex} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <LinearGradient
+          colors={[colors.black, colors.gradientNavyIndigo]}
+          start={{ x: 0.18, y: 0 }}
+          end={{ x: 0.82, y: 1 }}
+          locations={[0.019, 0.75]}
+          style={styles.header}
+        >
+          {photos.onboardingMobileNumber ? (
+            <Image source={photos.onboardingMobileNumber} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : null}
+        </LinearGradient>
 
-      <View style={styles.card}>
-        <Text style={styles.heading}>GoMax mein</Text>
-        <Text style={styles.headingAccent}>Wapas Aaiye! 👋</Text>
+        <View style={styles.card}>
+          <Text style={styles.heading}>GoMax mein</Text>
+          <Text style={styles.headingAccent}>Wapas Aaiye! 👋</Text>
 
-        <View style={{ marginTop: 32, gap: spacing.lg }}>
-          <TextField
-            label="MOBILE NUMBER"
-            prefix="🇮🇳 +91"
-            placeholder="XXXXX-XXXXX"
-            keyboardType="number-pad"
-            maxLength={10}
-            value={mobile}
-            onChangeText={(t) => setMobile(t.replace(/[^0-9]/g, ''))}
-          />
-          <TextField
-            label="PASSWORD"
-            placeholder="Enter your password"
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-            rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-            onRightIconPress={() => setShowPassword((v) => !v)}
-            rightIconAccessibilityLabel="Toggle password visibility"
-          />
+          <View style={{ marginTop: 32, gap: spacing.lg }}>
+            <TextField
+              label="MOBILE NUMBER"
+              prefix="🇮🇳 +91"
+              placeholder="XXXXX-XXXXX"
+              keyboardType="number-pad"
+              maxLength={10}
+              value={mobile}
+              onChangeText={(t) => setMobile(t.replace(/[^0-9]/g, ''))}
+            />
+            <TextField
+              label="PASSWORD"
+              placeholder="Enter your password"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              onRightIconPress={() => setShowPassword((v) => !v)}
+              rightIconAccessibilityLabel="Toggle password visibility"
+            />
+          </View>
+
+          <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8}>
+            <Text style={styles.forgotLink}>Password bhool gaye?</Text>
+          </Pressable>
+
+          <View style={{ marginTop: spacing.xxxl }}>
+            <Button label={signingIn ? 'Signing in…' : 'Login'} onPress={onSubmit} disabled={!canSubmit} roboto />
+          </View>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={8}>
+            <Text style={styles.terms}>
+              Naya account? <Text style={styles.termsLink}>Sign up karein</Text>
+            </Text>
+          </Pressable>
         </View>
-
-        <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8}>
-          <Text style={styles.forgotLink}>Password bhool gaye?</Text>
-        </Pressable>
-
-        <View style={styles.spacer} />
-
-        <Button label={signingIn ? 'Signing in…' : 'Login'} onPress={onSubmit} disabled={!canSubmit} roboto />
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={8}>
-          <Text style={styles.terms}>
-            Naya account? <Text style={styles.termsLink}>Sign up karein</Text>
-          </Text>
-        </Pressable>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.black },
+  scrollContent: { flexGrow: 1 },
   header: { height: 260, overflow: 'hidden' },
   card: {
     flex: 1,
@@ -107,11 +112,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xxl,
+    paddingBottom: spacing.xl,
   },
   heading: { ...m3Type.headlineLarge, color: colors.primary700 },
   headingAccent: { ...m3Type.headlineLarge, color: colors.black },
   forgotLink: { ...m3Type.labelMedium, color: colors.primary700, textAlign: 'right', marginTop: spacing.md },
-  spacer: { flex: 1 },
   errorText: { ...m3Type.labelMedium, color: colors.danger, textAlign: 'center', marginTop: spacing.sm },
   terms: { ...m3Type.labelSmall, color: colors.black, textAlign: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },
   termsLink: { color: colors.primary700 },
