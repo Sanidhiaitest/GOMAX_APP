@@ -1,8 +1,18 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Circle, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop, Text as SvgText } from 'react-native-svg';
+import Reanimated, {
+  Easing as ReanimatedEasing,
+  cancelAnimation,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Screen } from '../../components/Screen';
 import { PressableScale, RewardBurst, UnlockReveal } from '../../components/animations';
@@ -44,6 +54,42 @@ const WHEEL_RADIUS = RADIUS - RING_WIDTH;
 const SEG_ANGLE = 360 / SEGMENTS.length;
 const HUB_SIZE = 56;
 
+// --- "Mounted on a stand, under a light rig" dressing — fake dimensionality
+// with layered 2D SVG/Reanimated rather than a real 3D engine (see the
+// founder-brief note at the top of this screen's task for why: Three.js is
+// web/WebGL-only, and a real expo-gl 3D wheel is a heavy lift for a
+// decorative widget). All of the below is additive visual polish only — the
+// segment values, spin mechanic, spin-limit copy, and result modal are
+// untouched.
+
+// Rim lights: small bulbs embedded mid-band in the metallic rim itself (not
+// just outside the disc — outside it, they'd sit over the plain white
+// screen background and a white/near-white bulb is invisible against white).
+// Sitting on the rim band means they spin with the wheel, same as bulbs on a
+// real carnival prize wheel's rim.
+const RIM_LIGHT_COUNT = 12;
+const RIM_LIGHT_RADIUS = RADIUS - RING_WIDTH / 2;
+
+// Pedestal: a trapezoid "neck" + a base bar beneath the wheel.
+const PEDESTAL_TOP_W = SIZE * 0.5;
+const PEDESTAL_BOTTOM_W = SIZE * 0.74;
+const PEDESTAL_BASE_W = SIZE * 0.88;
+const PEDESTAL_TRAPEZOID_H = 32;
+const PEDESTAL_BASE_H = 14;
+const PEDESTAL_SVG_H = PEDESTAL_TRAPEZOID_H + PEDESTAL_BASE_H + 6;
+const PEDESTAL_OVERLAP = 6; // pedestal sits slightly under the wheel's bottom edge
+
+const COMPOSITION_WIDTH = SIZE + 48;
+const COMPOSITION_HEIGHT = SIZE + PEDESTAL_SVG_H - PEDESTAL_OVERLAP;
+
+// Ambient background particles: a handful of slow, low-opacity drifting
+// specks behind the whole composition — always running while the screen is
+// visible. Deliberately separate from `RewardBurst` (which is a one-shot
+// on-win celebration) and deliberately simple/cheap: plain Reanimated Views
+// looping transform + opacity, nothing more elaborate.
+const AMBIENT_PARTICLE_COUNT = 8;
+const AMBIENT_COLORS = [colors.orange500, colors.orange600, colors.navy700, colors.secondary500];
+
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
@@ -54,6 +100,104 @@ function segmentPath(index: number, r: number) {
   const end = polar(RADIUS, RADIUS, r, (index + 1) * SEG_ANGLE);
   const largeArc = SEG_ANGLE > 180 ? 1 : 0;
   return `M${RADIUS},${RADIUS} L${start.x},${start.y} A${r},${r} 0 ${largeArc} 1 ${end.x},${end.y} Z`;
+}
+
+function pedestalTrapezoidPath(cx: number) {
+  const topHalf = PEDESTAL_TOP_W / 2;
+  const bottomHalf = PEDESTAL_BOTTOM_W / 2;
+  return `M${cx - topHalf},0 L${cx + topHalf},0 L${cx + bottomHalf},${PEDESTAL_TRAPEZOID_H} L${cx - bottomHalf},${PEDESTAL_TRAPEZOID_H} Z`;
+}
+
+const AnimatedCircle = Reanimated.createAnimatedComponent(Circle);
+
+// One rim-light bulb: a staggered, breathing opacity pulse — same
+// useSharedValue + withRepeat(withTiming(...)) idiom as `GlowBorder`'s glow,
+// just applied to an SVG circle's opacity instead of a View's style, and
+// offset per-light via `withDelay` so they don't all pulse in lockstep.
+function RimLight({ cx, cy, r, color, delay }: { cx: number; cy: number; r: number; color: string; delay: number }) {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    pulse.value = withDelay(
+      delay,
+      withRepeat(withTiming(1, { duration: 1300, easing: ReanimatedEasing.inOut(ReanimatedEasing.sin) }), -1, true)
+    );
+    return () => cancelAnimation(pulse);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const animatedProps = useAnimatedProps(() => ({
+    opacity: 0.45 + pulse.value * 0.5,
+  }));
+
+  return <AnimatedCircle cx={cx} cy={cy} r={r} fill={color} animatedProps={animatedProps} />;
+}
+
+type AmbientParticleConfig = {
+  leftPct: number;
+  size: number;
+  color: string;
+  duration: number;
+  delay: number;
+};
+
+function AmbientParticle({ config, fieldHeight }: { config: AmbientParticleConfig; fieldHeight: number }) {
+  const fall = useSharedValue(0);
+
+  useEffect(() => {
+    fall.value = withDelay(
+      config.delay,
+      withRepeat(withTiming(1, { duration: config.duration, easing: ReanimatedEasing.linear }), -1, false)
+    );
+    return () => cancelAnimation(fall);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const style = useAnimatedStyle(() => {
+    const translateY = -16 + fall.value * (fieldHeight + 32);
+    // Sin-shaped opacity means the particle fades to 0 right at the loop
+    // boundary, so restarting from the top never pops/snaps visibly.
+    const opacity = Math.sin(fall.value * Math.PI) * 0.35;
+    return { transform: [{ translateY }], opacity };
+  });
+
+  return (
+    <Reanimated.View
+      style={[
+        styles.ambientParticle,
+        style,
+        {
+          left: `${config.leftPct}%`,
+          width: config.size,
+          height: config.size,
+          borderRadius: config.size / 2,
+          backgroundColor: config.color,
+        },
+      ]}
+    />
+  );
+}
+
+function AmbientParticles({ fieldHeight }: { fieldHeight: number }) {
+  const particles = useMemo<AmbientParticleConfig[]>(
+    () =>
+      Array.from({ length: AMBIENT_PARTICLE_COUNT }, (_, i) => ({
+        leftPct: 8 + Math.random() * 84,
+        size: 3 + Math.random() * 4,
+        color: AMBIENT_COLORS[i % AMBIENT_COLORS.length],
+        duration: 5200 + Math.random() * 3600,
+        delay: Math.random() * 4000,
+      })),
+    []
+  );
+
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {particles.map((p, i) => (
+        <AmbientParticle key={i} config={p} fieldHeight={fieldHeight} />
+      ))}
+    </View>
+  );
 }
 
 export function SpinWheelScreen({ navigation }: Props) {
@@ -140,47 +284,95 @@ export function SpinWheelScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.wheelSection}>
-        <View style={styles.wheelWrap}>
-          <View style={styles.pointer} />
-          <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-              <Circle cx={RADIUS} cy={RADIUS} r={RADIUS - 1} fill={colors.orange500} />
-              {SEGMENTS.map((seg, i) => (
-                <Path
-                  key={i}
-                  d={segmentPath(i, WHEEL_RADIUS)}
-                  fill={i % 2 === 0 ? colors.navy800 : colors.navy700}
-                  stroke={colors.orange500}
-                  strokeWidth={1.5}
-                />
-              ))}
-              {SEGMENTS.map((seg, i) => {
-                const angle = i * SEG_ANGLE + SEG_ANGLE / 2;
-                const iconPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.7, angle);
-                const labelPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.45, angle);
-                return (
-                  <React.Fragment key={`seg-content-${i}`}>
-                    <SvgText x={iconPos.x} y={iconPos.y} fontSize={16} textAnchor="middle">
-                      {seg.icon}
-                    </SvgText>
-                    <SvgText
-                      x={labelPos.x}
-                      y={labelPos.y}
-                      fill={colors.white}
-                      fontSize={seg.label === 'Again' ? 12 : 17}
-                      fontWeight="800"
-                      textAnchor="middle"
-                    >
-                      {seg.label}
-                    </SvgText>
-                  </React.Fragment>
-                );
-              })}
+        <View style={[styles.wheelComposition, { width: COMPOSITION_WIDTH, height: COMPOSITION_HEIGHT }]}>
+          <AmbientParticles fieldHeight={COMPOSITION_HEIGHT} />
+
+          <View style={styles.wheelWrap}>
+            <View style={styles.pointer} />
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+                <Defs>
+                  {/* Metallic/chrome rim: multi-stop gradient (light highlight →
+                      mid orange → darker shadow edge) derived from the existing
+                      orange scale, instead of a flat fill. */}
+                  <RadialGradient id="rimGrad" cx="35%" cy="30%" r="75%">
+                    <Stop offset="0" stopColor={colors.orange50} />
+                    <Stop offset="0.55" stopColor={colors.orange500} />
+                    <Stop offset="1" stopColor={colors.orange600} />
+                  </RadialGradient>
+                </Defs>
+                <Circle cx={RADIUS} cy={RADIUS} r={RADIUS - 1} fill="url(#rimGrad)" stroke={colors.orange600} strokeWidth={1} />
+                {/* Thin highlight + shadow lines fake a beveled edge on the rim. */}
+                <Circle cx={RADIUS} cy={RADIUS} r={RADIUS - 2.5} fill="none" stroke={colors.orange50} strokeWidth={1.2} opacity={0.55} />
+                <Circle cx={RADIUS} cy={RADIUS} r={WHEEL_RADIUS + 1} fill="none" stroke={colors.orange600} strokeWidth={1.4} opacity={0.5} />
+                {/* Rim lights: small bulbs embedded in the metallic rim band
+                    itself, so they read against the rim's orange tones
+                    instead of vanishing against the white screen background. */}
+                {Array.from({ length: RIM_LIGHT_COUNT }, (_, i) => {
+                  const pos = polar(RADIUS, RADIUS, RIM_LIGHT_RADIUS, i * (360 / RIM_LIGHT_COUNT));
+                  return <RimLight key={i} cx={pos.x} cy={pos.y} r={2.6} color={colors.white} delay={(i * 1400) / RIM_LIGHT_COUNT} />;
+                })}
+                {SEGMENTS.map((seg, i) => (
+                  <Path
+                    key={i}
+                    d={segmentPath(i, WHEEL_RADIUS)}
+                    fill={i % 2 === 0 ? colors.navy800 : colors.navy700}
+                    stroke={colors.orange500}
+                    strokeWidth={1.5}
+                  />
+                ))}
+                {SEGMENTS.map((seg, i) => {
+                  const angle = i * SEG_ANGLE + SEG_ANGLE / 2;
+                  const iconPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.7, angle);
+                  const labelPos = polar(RADIUS, RADIUS, WHEEL_RADIUS * 0.45, angle);
+                  return (
+                    <React.Fragment key={`seg-content-${i}`}>
+                      <SvgText x={iconPos.x} y={iconPos.y} fontSize={16} textAnchor="middle">
+                        {seg.icon}
+                      </SvgText>
+                      <SvgText
+                        x={labelPos.x}
+                        y={labelPos.y}
+                        fill={colors.white}
+                        fontSize={seg.label === 'Again' ? 12 : 17}
+                        fontWeight="800"
+                        textAnchor="middle"
+                      >
+                        {seg.label}
+                      </SvgText>
+                    </React.Fragment>
+                  );
+                })}
+              </Svg>
+            </Animated.View>
+            <PressableScale onPress={onSpin} disabled={!canSpin} style={[styles.hub, !canSpin && styles.hubDisabled]}>
+              <Ionicons name="sync" size={22} color={colors.white} />
+            </PressableScale>
+          </View>
+
+          <View style={styles.pedestalWrap}>
+            <Svg width={SIZE} height={PEDESTAL_SVG_H} viewBox={`0 0 ${SIZE} ${PEDESTAL_SVG_H}`}>
+              <Defs>
+                <LinearGradient id="pedestalGrad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor={colors.orange500} />
+                  <Stop offset="1" stopColor={colors.orange600} />
+                </LinearGradient>
+                <LinearGradient id="pedestalBaseGrad" x1="0" y1="0" x2="1" y2="0">
+                  <Stop offset="0" stopColor={colors.navy800} />
+                  <Stop offset="1" stopColor={colors.navy700} />
+                </LinearGradient>
+              </Defs>
+              <Path d={pedestalTrapezoidPath(SIZE / 2)} fill="url(#pedestalGrad)" />
+              <Rect
+                x={(SIZE - PEDESTAL_BASE_W) / 2}
+                y={PEDESTAL_TRAPEZOID_H + 4}
+                width={PEDESTAL_BASE_W}
+                height={PEDESTAL_BASE_H}
+                rx={7}
+                fill="url(#pedestalBaseGrad)"
+              />
             </Svg>
-          </Animated.View>
-          <PressableScale onPress={onSpin} disabled={!canSpin} style={[styles.hub, !canSpin && styles.hubDisabled]}>
-            <Ionicons name="sync" size={22} color={colors.white} />
-          </PressableScale>
+          </View>
         </View>
 
         <Text style={styles.tapHint}>{canSpin ? 'Tap the wheel to spin' : 'New spins tomorrow'}</Text>
@@ -235,7 +427,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wheelSection: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  wheelComposition: { alignItems: 'center' },
   wheelWrap: { alignItems: 'center', justifyContent: 'center' },
+  pedestalWrap: { marginTop: -PEDESTAL_OVERLAP },
+  ambientParticle: { position: 'absolute', top: 0 },
   pointer: {
     position: 'absolute',
     top: -9,
