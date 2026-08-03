@@ -108,3 +108,15 @@ answer (`request_password_reset_otp` + `reset_password_with_otp`).
 - The Team screen's top-line "Team business done" figure sums only direct
   reports' business_volume (each one's figure already rolls up everyone
   below them — summing all rows would double-count).
+
+## Tier system (Bronze/Silver/Gold/Platinum)
+- Real, not decorative — based on **lifetime Points earned** (scan +
+  commission credits), not current balance, so redeeming Points never
+  demotes someone.
+- `tier_bands` table (Admin-editable via SQL for now — no dedicated editor
+  screen yet): Bronze (0), Silver (2,000), Gold (5,000), Platinum (10,000
+  lifetime points). Each band has a `perk_description` field, currently just
+  descriptive text — no automated perk enforcement (e.g. no gift-catalogue
+  gating by tier yet).
+- `get_my_tier()` returns current tier, perks, and progress to next tier.
+  Shown on Profile with a progress bar.

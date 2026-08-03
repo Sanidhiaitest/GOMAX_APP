@@ -612,6 +612,30 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_bands: {
+        Row: {
+          id: string
+          min_lifetime_points: number
+          name: string
+          perk_description: string | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          min_lifetime_points: number
+          name: string
+          perk_description?: string | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          min_lifetime_points?: number
+          name?: string
+          perk_description?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
       user_scratch_cards: {
         Row: {
           card_id: string
@@ -708,6 +732,17 @@ export type Database = {
         }[]
       }
       current_role_is: { Args: { target: string }; Returns: boolean }
+      get_my_tier: { Args: never; Returns: Json }
+      list_tier_bands: {
+        Args: never
+        Returns: {
+          id: string
+          min_lifetime_points: number
+          name: string
+          perk_description: string | null
+          sort_order: number
+        }[]
+      }
       get_referrer_role_by_code: {
         Args: { p_referral_code: string }
         Returns: Json

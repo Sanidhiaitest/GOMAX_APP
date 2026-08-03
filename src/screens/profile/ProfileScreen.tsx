@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import { Button } from '../../components/Button';
 import { GoMaxLogo } from '../../components/GoMaxLogo';
 import { useApp } from '../../state/AppContext';
 import { updateMyProfile } from '../../services/profile';
+import { getMyTier, MyTier } from '../../services/wallet';
 import { RootStackParamList } from '../../navigation/types';
 import { softHaptic } from '../../utils/haptics';
 
@@ -22,21 +23,6 @@ const ROLE_LABEL: Record<string, string> = {
   applicator: 'Applicator',
   admin: 'Admin',
 };
-
-// Points-based tier bands — purely a visual "progress" ring, doesn't change
-// anything, just gives the hero card something graphic to show.
-const TIER_BANDS = [
-  { name: 'Bronze', min: 0, max: 500 },
-  { name: 'Silver', min: 500, max: 1500 },
-  { name: 'Gold', min: 1500, max: 3000 },
-  { name: 'Platinum', min: 3000, max: 3000 },
-];
-
-function tierRingPct(points: number) {
-  const band = TIER_BANDS.find((b) => points < b.max) ?? TIER_BANDS[TIER_BANDS.length - 1];
-  if (band.max === band.min) return 100;
-  return Math.min(100, Math.round(((points - band.min) / (band.max - band.min)) * 100));
-}
 
 // A deterministic-looking (seeded, not random) block pattern standing in for
 // a scannable QR code — decorative only.
@@ -86,6 +72,11 @@ export function ProfileScreen() {
   const [panModalOpen, setPanModalOpen] = useState(false);
   const [panInput, setPanInput] = useState('');
   const [savingPan, setSavingPan] = useState(false);
+  const [tier, setTier] = useState<MyTier | null>(null);
+
+  useEffect(() => {
+    getMyTier().then(setTier);
+  }, []);
 
   const onSavePan = async () => {
     setSavingPan(true);
@@ -108,7 +99,8 @@ export function ProfileScreen() {
 
   const memberId = `GMX${mobileNumber ? mobileNumber.slice(-6) : '000000'}`;
   const pattern = idPattern(memberId + fullName);
-  const ring = { pct: tierRingPct(points), icon: 'star' as const, label: `${points} pts` };
+  const tierPct = tier?.nextTierThreshold ? Math.min(100, Math.round((tier.lifetimePoints / tier.nextTierThreshold) * 100)) : 100;
+  const ring = { pct: tier ? tierPct : 0, icon: 'star' as const, label: tier?.tierName ?? '…' };
 
   const idCardFields = [
     { label: 'Referral Code', value: referralCode || '—' },
@@ -174,6 +166,28 @@ export function ProfileScreen() {
             </Pressable>
           ))}
         </View>
+
+        {tier ? (
+          <Card style={styles.tierCard}>
+            <View style={styles.tierHeaderRow}>
+              <Text style={styles.tierName}>{tier.tierName} Tier</Text>
+              <Text style={styles.tierPoints}>{tier.lifetimePoints} lifetime pts</Text>
+            </View>
+            {tier.perkDescription ? <Text style={styles.tierPerk}>{tier.perkDescription}</Text> : null}
+            {tier.nextTierName ? (
+              <>
+                <View style={styles.tierBarTrack}>
+                  <View style={[styles.tierBarFill, { width: `${tierPct}%` }]} />
+                </View>
+                <Text style={styles.tierHint}>
+                  {tier.pointsToNextTier} pts to {tier.nextTierName}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.tierHint}>Top tier reached 🎉</Text>
+            )}
+          </Card>
+        ) : null}
 
         <View style={styles.idCard}>
           <View style={styles.idCardHeader}>
@@ -304,6 +318,14 @@ const styles = StyleSheet.create({
   },
   shortcutLabel: { ...typography.caption, fontSize: 11, color: colors.textSecondary },
   idCard: { backgroundColor: colors.navy800, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.lg },
+  tierCard: { gap: spacing.sm },
+  tierHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  tierName: { ...typography.h3, color: colors.textPrimary },
+  tierPoints: { ...typography.caption, color: colors.textSecondary },
+  tierPerk: { ...typography.caption, color: colors.textSecondary },
+  tierBarTrack: { height: 6, borderRadius: 3, backgroundColor: colors.surfaceMuted, overflow: 'hidden', marginTop: spacing.xs },
+  tierBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.orange500 },
+  tierHint: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   idCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   idCardEyebrow: { ...typography.label, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.2 },
   idCardBody: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
