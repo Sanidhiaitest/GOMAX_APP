@@ -590,11 +590,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_account_exists: { Args: never; Returns: boolean }
+      bootstrap_admin_account: { Args: { p_full_name: string }; Returns: Json }
       check_security_answer: {
         Args: { p_answer: string; p_mobile_number: string }
         Returns: boolean
       }
       claim_challenge: { Args: { p_challenge_id: string }; Returns: Json }
+      get_my_downline: {
+        Args: never
+        Returns: {
+          id: string
+          full_name: string
+          role: string
+          created_at: string
+          commission_generated: number
+        }[]
+      }
       complete_signup: {
         Args: {
           p_address: string

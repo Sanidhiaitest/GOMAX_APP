@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -35,6 +36,7 @@ function maskUpi(upiId: string) {
 }
 
 export function WalletScreen() {
+  const navigation = useNavigation();
   const { points, runs, upiId, refreshProfile } = useApp();
   const { data: myRedemptions, reload: reloadRedemptions } = useMyRedemptions();
   const { data: redeemedThisMonth, reload: reloadMonthTotal } = useRedeemedThisMonth();
@@ -184,7 +186,12 @@ export function WalletScreen() {
             {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
           </View>
 
-          <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>REDEMPTION HISTORY</Text>
+          <View style={styles.historyHeaderRow}>
+            <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>REDEMPTION HISTORY</Text>
+            <Pressable onPress={() => navigation.getParent()?.navigate('Ledger' as never)}>
+              <Text style={styles.fullLedgerLink}>Full ledger →</Text>
+            </Pressable>
+          </View>
           {myRedemptions.length === 0 ? (
             <View style={styles.historyEmpty}>
               <Ionicons name="time-outline" size={32} color="rgba(10,22,40,0.25)" />
@@ -320,6 +327,8 @@ const styles = StyleSheet.create({
   infoBannerText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.walletPointsAccent },
   errorText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.danger, marginTop: spacing.sm, textAlign: 'center' },
   fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.6, color: 'rgba(10,22,40,0.4)', marginTop: spacing.lg },
+  historyHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  fullLedgerLink: { fontFamily: 'Inter_600SemiBold', fontSize: 12, color: colors.walletPointsAccent, marginTop: spacing.lg },
   upiField: {
     flexDirection: 'row',
     alignItems: 'center',

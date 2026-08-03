@@ -16,7 +16,7 @@ export function AdminTabNavigator() {
       <Tab.Screen name="Dashboard" component={AdminDashboardScreen} />
       <Tab.Screen name="Redemptions" component={AdminRedemptionsScreen} />
       <Tab.Screen name="Gifts" component={AdminGiftsScreen} />
-      <Tab.Screen name="Applicators" component={AdminApplicatorsScreen} />
+      <Tab.Screen name="Directory" component={AdminApplicatorsScreen} />
       <Tab.Screen name="LedgerSearch" component={AdminLedgerSearchScreen} />
     </Tab.Navigator>
   );

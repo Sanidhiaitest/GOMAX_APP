@@ -20,7 +20,7 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Dashboard: 'grid-outline',
   DealerApprovals: 'storefront-outline',
   Redemptions: 'cash-outline',
-  Applicators: 'people-outline',
+  Directory: 'people-outline',
   LedgerSearch: 'search-outline',
 };
 

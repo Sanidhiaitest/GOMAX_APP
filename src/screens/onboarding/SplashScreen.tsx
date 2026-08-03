@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, m3Type, spacing } from '../../theme';
 import { GoMaxLogo } from '../../components/GoMaxLogo';
 import { useApp } from '../../state/AppContext';
+import { adminAccountExists } from '../../services/auth';
 import { OnboardingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Splash'>;
@@ -35,9 +36,21 @@ export function SplashScreen({ navigation }: Props) {
     }
   }, [navigation, isAuthenticated, sessionLoading, minTimeElapsed]);
 
-  const goToAdminLogin = () => {
-    routedRef.current = true;
-    navigation.getParent()?.navigate('AdminLogin');
+  const [checkingAdmin, setCheckingAdmin] = React.useState(false);
+
+  const goToAdminLogin = async () => {
+    setCheckingAdmin(true);
+    try {
+      const exists = await adminAccountExists();
+      routedRef.current = true;
+      if (exists) {
+        navigation.getParent()?.navigate('AdminLogin');
+      } else {
+        navigation.navigate('AdminSetup');
+      }
+    } finally {
+      setCheckingAdmin(false);
+    }
   };
 
   return (
@@ -49,8 +62,8 @@ export function SplashScreen({ navigation }: Props) {
       style={styles.container}
     >
       <GoMaxLogo variant="full-orange" width={260} />
-      <Pressable style={styles.adminLink} onPress={goToAdminLogin} hitSlop={16}>
-        <Text style={styles.adminLinkText}>Staff / Admin login</Text>
+      <Pressable style={styles.adminLink} onPress={goToAdminLogin} hitSlop={16} disabled={checkingAdmin}>
+        <Text style={styles.adminLinkText}>{checkingAdmin ? 'Checking…' : 'Staff / Admin login'}</Text>
       </Pressable>
     </LinearGradient>
   );

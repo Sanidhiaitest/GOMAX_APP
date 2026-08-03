@@ -8,6 +8,20 @@ export type GiftRow = Tables<'gift_catalogue'>;
 
 /** Every function here requires the signed-in user to have role='admin' — enforced by RLS on every table touched. */
 
+export type DirectoryEntry = ProfileRow & { uplineName: string | null; uplineRole: string | null };
+
+/** Flat list of every user in the system with their direct upline resolved — admin's hierarchy overview. */
+export async function listAllUsersDirectory(): Promise<DirectoryEntry[]> {
+  const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  const all = data ?? [];
+  const byId = new Map(all.map((p) => [p.id, p]));
+  return all.map((p) => {
+    const referrer = p.referrer_id ? byId.get(p.referrer_id) : undefined;
+    return { ...p, uplineName: referrer?.full_name ?? null, uplineRole: referrer?.role ?? null };
+  });
+}
+
 export async function listApplicators(): Promise<ProfileRow[]> {
   const { data, error } = await supabase.from('profiles').select('*').eq('role', 'applicator').order('points', { ascending: false });
   if (error) throw error;
