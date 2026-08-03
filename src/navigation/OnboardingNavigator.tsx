@@ -5,6 +5,7 @@ import { SplashScreen } from '../screens/onboarding/SplashScreen';
 import { LoginScreen } from '../screens/onboarding/LoginScreen';
 import { SignupScreen } from '../screens/onboarding/SignupScreen';
 import { ForgotPasswordScreen } from '../screens/onboarding/ForgotPasswordScreen';
+import { AdminSetupScreen } from '../screens/onboarding/AdminSetupScreen';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
@@ -15,6 +16,7 @@ export function OnboardingNavigator() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Signup" component={SignupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="AdminSetup" component={AdminSetupScreen} />
     </Stack.Navigator>
   );
 }

@@ -41,6 +41,8 @@ export async function listMyRedemptions(): Promise<RedemptionRequestRow[]> {
   return data ?? [];
 }
 
+export type RunsLedgerRow = Tables<'runs_ledger'>;
+
 export async function listMyPointsLedger(): Promise<PointsLedgerRow[]> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return [];
@@ -61,6 +63,18 @@ export async function listMyCommissionEarnings(): Promise<CommissionLedgerRow[]>
     .from('commission_ledger')
     .select('*')
     .eq('recipient_id', auth.user.id)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function listMyRunsLedger(): Promise<RunsLedgerRow[]> {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return [];
+  const { data, error } = await supabase
+    .from('runs_ledger')
+    .select('*')
+    .eq('user_id', auth.user.id)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];

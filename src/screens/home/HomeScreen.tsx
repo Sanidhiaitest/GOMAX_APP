@@ -63,17 +63,18 @@ export function HomeScreen() {
           </Card>
         </View>
 
-        {!isApplicator ? (
+        <Pressable onPress={() => navigation.navigate('Team')}>
           <Card style={styles.teamCard}>
             <View style={styles.teamIcon}>
               <Ionicons name="people-outline" size={20} color={colors.navy700} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.teamTitle}>Your team&apos;s commission</Text>
+              <Text style={styles.teamTitle}>My Team</Text>
               <Text style={styles.teamText}>₹{totalCommission.toLocaleString('en-IN')} earned from your downline&apos;s scans</Text>
             </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />
           </Card>
-        ) : null}
+        </Pressable>
 
         <Card style={styles.referralCard}>
           <View style={{ flex: 1 }}>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
@@ -6,21 +6,36 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { StatTile } from '../../components/StatTile';
-import { useApplicators } from '../../hooks/useAppData';
+import { listAllUsersDirectory, DirectoryEntry } from '../../services/admin';
+
+const ROLE_TONE: Record<string, 'primary' | 'info' | 'success' | 'warning'> = {
+  dealer: 'primary',
+  contractor: 'info',
+  applicator: 'success',
+  admin: 'warning',
+};
 
 export function AdminApplicatorsScreen() {
-  const { data: applicators } = useApplicators();
-  const totalPoints = applicators.reduce((sum, a) => sum + a.points, 0);
+  const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
+
+  useEffect(() => {
+    listAllUsersDirectory().then(setDirectory);
+  }, []);
+
+  const totalPoints = directory.reduce((sum, a) => sum + a.points, 0);
+  const dealers = directory.filter((d) => d.role === 'dealer').length;
+  const contractors = directory.filter((d) => d.role === 'contractor').length;
+  const applicators = directory.filter((d) => d.role === 'applicator').length;
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
-        <Text style={styles.title}>Applicators</Text>
-        <Text style={styles.subtitle}>{applicators.length} registered</Text>
+        <Text style={styles.title}>Hierarchy Directory</Text>
+        <Text style={styles.subtitle}>{directory.length} people · {dealers} Dealers, {contractors} Contractors, {applicators} Applicators</Text>
       </View>
 
       <View style={styles.statGrid}>
-        <StatTile icon="people-outline" value={String(applicators.length)} label="Applicators" />
+        <StatTile icon="people-outline" value={String(directory.length)} label="Total users" />
         <StatTile
           icon="cash-outline"
           value={String(totalPoints)}
@@ -31,7 +46,7 @@ export function AdminApplicatorsScreen() {
       </View>
 
       <FlatList
-        data={applicators}
+        data={directory}
         keyExtractor={(a) => a.id}
         contentContainerStyle={styles.content}
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
@@ -46,17 +61,19 @@ export function AdminApplicatorsScreen() {
                 <Ionicons name="call-outline" size={12} color={colors.neutral500} />
                 <Text style={styles.meta}>{item.mobile_number ?? '—'}</Text>
               </View>
+              {item.uplineName ? (
+                <View style={styles.metaRow}>
+                  <Ionicons name="arrow-up-outline" size={12} color={colors.neutral500} />
+                  <Text style={styles.meta}>{item.uplineName} ({item.uplineRole})</Text>
+                </View>
+              ) : (
+                <Text style={styles.meta}>Root of their chain</Text>
+              )}
             </View>
             <View style={{ alignItems: 'flex-end', gap: 4 }}>
-              <Pill label={item.city || '—'} tone="primary" size="sm" />
-              <View style={styles.countRow}>
-                <Ionicons name="cash-outline" size={11} color={colors.neutral500} />
-                <Text style={styles.points}>{item.points} pts</Text>
-              </View>
-              <View style={styles.countRow}>
-                <Ionicons name="trophy-outline" size={11} color={colors.neutral500} />
-                <Text style={styles.points}>{item.runs} runs</Text>
-              </View>
+              <Pill label={item.role} tone={ROLE_TONE[item.role] ?? 'neutral'} size="sm" />
+              <Text style={styles.points}>{item.points} pts</Text>
+              <Text style={styles.points}>{item.runs} runs</Text>
             </View>
           </Card>
         )}
@@ -71,9 +88,8 @@ const styles = StyleSheet.create({
   subtitle: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500, marginTop: 2 },
   statGrid: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   content: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxxl },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  countRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   avatar: {
     width: 40,
     height: 40,

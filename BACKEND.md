@@ -57,3 +57,20 @@ answer (`request_password_reset_otp` + `reset_password_with_otp`).
   `beat_plan`, `dcr_entries`, `redemption_requests`, `referrals`,
   `fraud_flags`, `products`, `scan_activity` tables still exist in Supabase
   (harmless, unused) in case a future version wants to revive that flow.
+
+## Team / Ledger / Admin Directory (added after initial V1)
+- **My Team** (`get_my_downline()`): every person in a user's downline, unlimited
+  depth, with per-person commission the viewer has earned specifically from
+  that person's own scans — not just a flat total.
+- **Full Ledger**: Points and Runs now have a complete transaction history
+  screen (scan credits, commission credits, redemption debits / challenge,
+  spin, scratch credits, gift debits) — not just the redemption-request list.
+- **Admin bootstrap**: `admin_account_exists()` + `bootstrap_admin_account()`.
+  First admin only — the setup screen (reachable from Splash → "Staff / Admin
+  login" when no admin exists yet) locks itself out permanently once one
+  admin account exists. Adding a *second* admin isn't built yet — needs a
+  manual SQL promote for now, same as documented above.
+- **Admin Directory** (was "Applicators" tab, renamed): flat list of every
+  user in the system with their direct upline resolved, for hierarchy
+  visibility. A visual org-chart/tree view is not built — flat list only,
+  per the "start simple" decision.

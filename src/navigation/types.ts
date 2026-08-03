@@ -3,6 +3,7 @@ export type OnboardingStackParamList = {
   Login: undefined;
   Signup: undefined;
   ForgotPassword: undefined;
+  AdminSetup: undefined;
 };
 
 // One shared tab set for Dealer / Contractor / Applicator — content inside
@@ -20,7 +21,7 @@ export type AdminTabParamList = {
   Dashboard: undefined;
   Redemptions: undefined;
   Gifts: undefined;
-  Applicators: undefined;
+  Directory: undefined;
   LedgerSearch: undefined;
 };
 
@@ -30,6 +31,8 @@ export type RootStackParamList = {
   Challenges: undefined;
   ScratchCards: undefined;
   SpinWheel: undefined;
+  Team: undefined;
+  Ledger: undefined;
   AdminLogin: undefined;
   AdminMain: undefined;
 };
