@@ -36,45 +36,6 @@ export type Database = {
         }
         Relationships: []
       }
-      beat_plan: {
-        Row: {
-          address: string | null
-          area: string | null
-          dealer_id: string | null
-          dealer_name: string
-          id: string
-          last_order_amount: number | null
-          phone: string | null
-          salesman_id: string
-          status: string
-          visit_date: string
-        }
-        Insert: {
-          address?: string | null
-          area?: string | null
-          dealer_id?: string | null
-          dealer_name: string
-          id?: string
-          last_order_amount?: number | null
-          phone?: string | null
-          salesman_id: string
-          status?: string
-          visit_date?: string
-        }
-        Update: {
-          address?: string | null
-          area?: string | null
-          dealer_id?: string | null
-          dealer_name?: string
-          id?: string
-          last_order_amount?: number | null
-          phone?: string | null
-          salesman_id?: string
-          status?: string
-          visit_date?: string
-        }
-        Relationships: []
-      }
       challenge_progress: {
         Row: {
           challenge_id: string
@@ -135,233 +96,248 @@ export type Database = {
         }
         Relationships: []
       }
-      dcr_entries: {
-        Row: {
-          dealer_name: string
-          entry_time: string
-          id: string
-          notes: string | null
-          outcome: string
-          salesman_id: string
-        }
-        Insert: {
-          dealer_name: string
-          entry_time?: string
-          id?: string
-          notes?: string | null
-          outcome: string
-          salesman_id: string
-        }
-        Update: {
-          dealer_name?: string
-          entry_time?: string
-          id?: string
-          notes?: string | null
-          outcome?: string
-          salesman_id?: string
-        }
-        Relationships: []
-      }
-      dealer_business_details: {
-        Row: {
-          address: string | null
-          bank_upi: string | null
-          created_at: string
-          credit_limit: number
-          dealer_id: string
-          due_date: string | null
-          gst_number: string | null
-          outstanding: number
-          shop_name: string
-          shop_photo_url: string | null
-          verification_status: string
-        }
-        Insert: {
-          address?: string | null
-          bank_upi?: string | null
-          created_at?: string
-          credit_limit?: number
-          dealer_id: string
-          due_date?: string | null
-          gst_number?: string | null
-          outstanding?: number
-          shop_name?: string
-          shop_photo_url?: string | null
-          verification_status?: string
-        }
-        Update: {
-          address?: string | null
-          bank_upi?: string | null
-          created_at?: string
-          credit_limit?: number
-          dealer_id?: string
-          due_date?: string | null
-          gst_number?: string | null
-          outstanding?: number
-          shop_name?: string
-          shop_photo_url?: string | null
-          verification_status?: string
-        }
-        Relationships: []
-      }
-      fraud_flags: {
-        Row: {
-          created_at: string
-          detail: string | null
-          id: string
-          related_scan_id: string | null
-          severity: string
-          status: string
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          detail?: string | null
-          id?: string
-          related_scan_id?: string | null
-          severity: string
-          status?: string
-          title: string
-        }
-        Update: {
-          created_at?: string
-          detail?: string | null
-          id?: string
-          related_scan_id?: string | null
-          severity?: string
-          status?: string
-          title?: string
-        }
-        Relationships: []
-      }
-      ledger_transactions: {
+      commission_ledger: {
         Row: {
           amount: number
           created_at: string
-          dealer_id: string
           id: string
-          label: string
-          txn_date: string
-          type: string
+          level: number
+          recipient_id: string
+          source_scan_id: string
         }
         Insert: {
           amount: number
           created_at?: string
-          dealer_id: string
           id?: string
-          label: string
-          txn_date?: string
-          type: string
+          level: number
+          recipient_id: string
+          source_scan_id: string
         }
         Update: {
           amount?: number
           created_at?: string
-          dealer_id?: string
           id?: string
-          label?: string
-          txn_date?: string
-          type?: string
+          level?: number
+          recipient_id?: string
+          source_scan_id?: string
         }
         Relationships: []
       }
-      order_items: {
+      coupons: {
         Row: {
-          id: string
-          name: string
-          order_id: string
-          price: number
-          product_id: string | null
-          qty: number
-        }
-        Insert: {
-          id?: string
-          name: string
-          order_id: string
-          price?: number
-          product_id?: string | null
-          qty?: number
-        }
-        Update: {
-          id?: string
-          name?: string
-          order_id?: string
-          price?: number
-          product_id?: string | null
-          qty?: number
-        }
-        Relationships: []
-      }
-      orders: {
-        Row: {
-          amount: number
+          batch_id: string | null
+          code: string
           created_at: string
-          dealer_id: string
           id: string
-          order_date: string
-          order_no: string
-          salesman_id: string | null
+          points_value: number
+          redeemed_at: string | null
+          redeemed_by: string | null
           status: string
         }
         Insert: {
-          amount?: number
+          batch_id?: string | null
+          code: string
           created_at?: string
-          dealer_id: string
           id?: string
-          order_date?: string
-          order_no: string
-          salesman_id?: string | null
+          points_value: number
+          redeemed_at?: string | null
+          redeemed_by?: string | null
           status?: string
         }
         Update: {
-          amount?: number
+          batch_id?: string | null
+          code?: string
           created_at?: string
-          dealer_id?: string
           id?: string
-          order_date?: string
-          order_no?: string
-          salesman_id?: string | null
+          points_value?: number
+          redeemed_at?: string | null
+          redeemed_by?: string | null
           status?: string
         }
         Relationships: []
       }
-      products: {
+      gift_catalogue: {
         Row: {
           active: boolean
-          category: string
+          created_at: string
           description: string | null
-          icon: string | null
           id: string
+          image_url: string | null
           name: string
-          price: number
-          unit: string
-          used_for: string[] | null
+          runs_cost: number
+          stock: number
         }
         Insert: {
           active?: boolean
-          category: string
+          created_at?: string
           description?: string | null
-          icon?: string | null
           id?: string
+          image_url?: string | null
           name: string
-          price: number
-          unit: string
-          used_for?: string[] | null
+          runs_cost: number
+          stock?: number
         }
         Update: {
           active?: boolean
-          category?: string
+          created_at?: string
           description?: string | null
-          icon?: string | null
           id?: string
+          image_url?: string | null
           name?: string
-          price?: number
-          unit?: string
-          used_for?: string[] | null
+          runs_cost?: number
+          stock?: number
+        }
+        Relationships: []
+      }
+      gift_redemptions: {
+        Row: {
+          delivered_at: string | null
+          gift_id: string
+          id: string
+          proof_url: string | null
+          requested_at: string
+          runs_spent: number
+          shipped_at: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          delivered_at?: string | null
+          gift_id: string
+          id?: string
+          proof_url?: string | null
+          requested_at?: string
+          runs_spent: number
+          shipped_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          delivered_at?: string | null
+          gift_id?: string
+          id?: string
+          proof_url?: string | null
+          requested_at?: string
+          runs_spent?: number
+          shipped_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          mobile_number: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed?: boolean
+          created_at?: string
+          expires_at: string
+          id?: string
+          mobile_number: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mobile_number?: string
+        }
+        Relationships: []
+      }
+      points_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          entry_type: string
+          id: string
+          ref_id: string | null
+          ref_table: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          entry_type: string
+          id?: string
+          ref_id?: string | null
+          ref_table?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          entry_type?: string
+          id?: string
+          ref_id?: string | null
+          ref_table?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      points_redemption_requests: {
+        Row: {
+          amount: number
+          bank_account_number: string | null
+          bank_ifsc: string | null
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          proof_url: string | null
+          requested_at: string
+          status: string
+          upi_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          proof_url?: string | null
+          requested_at?: string
+          status?: string
+          upi_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          proof_url?: string | null
+          requested_at?: string
+          status?: string
+          upi_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          address: string | null
+          bank_account_number: string | null
+          bank_ifsc: string | null
           city: string
           created_at: string
           employee_code: string | null
@@ -374,12 +350,17 @@ export type Database = {
           onboarding_complete: boolean
           points: number
           referral_code: string | null
-          referred_by: string | null
+          referrer_id: string | null
           role: string
           runs: number
+          security_answer_hash: string | null
+          security_question: string | null
           upi_id: string | null
         }
         Insert: {
+          address?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
           city?: string
           created_at?: string
           employee_code?: string | null
@@ -392,12 +373,17 @@ export type Database = {
           onboarding_complete?: boolean
           points?: number
           referral_code?: string | null
-          referred_by?: string | null
+          referrer_id?: string | null
           role?: string
           runs?: number
+          security_answer_hash?: string | null
+          security_question?: string | null
           upi_id?: string | null
         }
         Update: {
+          address?: string | null
+          bank_account_number?: string | null
+          bank_ifsc?: string | null
           city?: string
           created_at?: string
           employee_code?: string | null
@@ -410,106 +396,66 @@ export type Database = {
           onboarding_complete?: boolean
           points?: number
           referral_code?: string | null
-          referred_by?: string | null
+          referrer_id?: string | null
           role?: string
           runs?: number
+          security_answer_hash?: string | null
+          security_question?: string | null
           upi_id?: string | null
         }
         Relationships: []
       }
-      redemption_requests: {
+      runs_ledger: {
         Row: {
           amount: number
-          decided_at: string | null
-          decided_by: string | null
+          created_at: string
+          entry_type: string
           id: string
-          requested_at: string
-          status: string
-          upi_id: string
+          ref_id: string | null
+          ref_table: string | null
           user_id: string
         }
         Insert: {
           amount: number
-          decided_at?: string | null
-          decided_by?: string | null
+          created_at?: string
+          entry_type: string
           id?: string
-          requested_at?: string
-          status?: string
-          upi_id: string
+          ref_id?: string | null
+          ref_table?: string | null
           user_id: string
         }
         Update: {
           amount?: number
-          decided_at?: string | null
-          decided_by?: string | null
+          created_at?: string
+          entry_type?: string
           id?: string
-          requested_at?: string
-          status?: string
-          upi_id?: string
+          ref_id?: string | null
+          ref_table?: string | null
           user_id?: string
         }
         Relationships: []
       }
-      referrals: {
+      scan_transactions: {
         Row: {
+          applicator_id: string
+          coupon_id: string
           created_at: string
           id: string
           points_awarded: number
-          referred_mobile: string
-          referred_user_id: string | null
-          referrer_id: string
-          status: string
         }
         Insert: {
+          applicator_id: string
+          coupon_id: string
+          created_at?: string
+          id?: string
+          points_awarded: number
+        }
+        Update: {
+          applicator_id?: string
+          coupon_id?: string
           created_at?: string
           id?: string
           points_awarded?: number
-          referred_mobile: string
-          referred_user_id?: string | null
-          referrer_id: string
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          points_awarded?: number
-          referred_mobile?: string
-          referred_user_id?: string | null
-          referrer_id?: string
-          status?: string
-        }
-        Relationships: []
-      }
-      scan_activity: {
-        Row: {
-          gps_lat: number | null
-          gps_lng: number | null
-          id: string
-          points: number
-          product_id: string | null
-          qr_code: string | null
-          scanned_at: string
-          user_id: string
-        }
-        Insert: {
-          gps_lat?: number | null
-          gps_lng?: number | null
-          id?: string
-          points?: number
-          product_id?: string | null
-          qr_code?: string | null
-          scanned_at?: string
-          user_id: string
-        }
-        Update: {
-          gps_lat?: number | null
-          gps_lng?: number | null
-          id?: string
-          points?: number
-          product_id?: string | null
-          qr_code?: string | null
-          scanned_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -537,6 +483,57 @@ export type Database = {
           reward?: number
           subtitle?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      spin_wheel_prizes: {
+        Row: {
+          active: boolean
+          id: string
+          label: string
+          runs_value: number
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          id?: string
+          label: string
+          runs_value?: number
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          id?: string
+          label?: string
+          runs_value?: number
+          weight?: number
+        }
+        Relationships: []
+      }
+      spin_wheel_spins: {
+        Row: {
+          id: string
+          prize_id: string | null
+          runs_awarded: number
+          spin_date: string
+          spun_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          prize_id?: string | null
+          runs_awarded?: number
+          spin_date?: string
+          spun_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          prize_id?: string | null
+          runs_awarded?: number
+          spin_date?: string
+          spun_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -593,8 +590,55 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_security_answer: {
+        Args: { p_answer: string; p_mobile_number: string }
+        Returns: boolean
+      }
+      claim_challenge: { Args: { p_challenge_id: string }; Returns: Json }
+      complete_signup: {
+        Args: {
+          p_address: string
+          p_bank_account_number: string
+          p_bank_ifsc: string
+          p_city: string
+          p_full_name: string
+          p_mobile_number: string
+          p_referral_code: string
+          p_role: string
+          p_security_answer: string
+          p_security_question: string
+          p_upi_id: string
+        }
+        Returns: Json
+      }
       current_role_is: { Args: { target: string }; Returns: boolean }
+      get_referrer_role_by_code: {
+        Args: { p_referral_code: string }
+        Returns: Json
+      }
+      get_security_question: {
+        Args: { p_mobile_number: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
+      redeem_gift: { Args: { p_gift_id: string }; Returns: Json }
+      request_password_reset_otp: {
+        Args: { p_mobile_number: string }
+        Returns: Json
+      }
+      request_points_redemption: { Args: { p_amount: number }; Returns: Json }
+      reset_password_with_otp: {
+        Args: {
+          p_mobile_number: string
+          p_new_password: string
+          p_otp_code: string
+          p_security_answer: string
+        }
+        Returns: Json
+      }
+      reveal_scratch_card: { Args: { p_user_card_id: string }; Returns: Json }
+      scan_coupon: { Args: { p_code: string }; Returns: Json }
+      spin_wheel: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never

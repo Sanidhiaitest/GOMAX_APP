@@ -10,6 +10,8 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Products: 'cube-outline',
   Scan: 'qr-code',
   Redeem: 'gift-outline',
+  Wallet: 'wallet-outline',
+  Gifts: 'gift-outline',
   Profile: 'person-outline',
   Orders: 'receipt-outline',
   Ledger: 'wallet-outline',
@@ -19,11 +21,13 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   DealerApprovals: 'storefront-outline',
   Redemptions: 'cash-outline',
   Applicators: 'people-outline',
+  LedgerSearch: 'search-outline',
 };
 
 const LABELS: Record<string, string> = {
   Dcr: 'Reports',
   DealerApprovals: 'Dealers',
+  LedgerSearch: 'Search',
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {

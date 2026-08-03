@@ -6,46 +6,25 @@ import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { StatTile } from '../../components/StatTile';
-import { useApp } from '../../state/AppContext';
-import { useApplicators } from '../../hooks/useSupabaseData';
+import { useApplicators } from '../../hooks/useAppData';
 
 export function AdminApplicatorsScreen() {
-  const { role, fullName, city, loyaltyTier, points, scanHistory } = useApp();
-  const { data: otherApplicators } = useApplicators();
-
-  const liveApplicator =
-    role === 'mason'
-      ? [{ id: 'live', name: fullName || 'You', city: city || '—', tier: loyaltyTier, scansThisMonth: scanHistory.length, pointsBalance: points }]
-      : [];
-
-  const applicators = [
-    ...liveApplicator,
-    ...otherApplicators
-      .filter((a) => a.full_name !== fullName)
-      .map((a) => ({
-        id: a.id,
-        name: a.full_name || 'GoMax User',
-        city: a.city || '—',
-        tier: a.loyalty_tier,
-        scansThisMonth: 0,
-        pointsBalance: a.points,
-      })),
-  ];
-  const totalScans = applicators.reduce((sum, a) => sum + a.scansThisMonth, 0);
+  const { data: applicators } = useApplicators();
+  const totalPoints = applicators.reduce((sum, a) => sum + a.points, 0);
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
         <Text style={styles.title}>Applicators</Text>
-        <Text style={styles.subtitle}>{applicators.length} active this month</Text>
+        <Text style={styles.subtitle}>{applicators.length} registered</Text>
       </View>
 
       <View style={styles.statGrid}>
-        <StatTile icon="people-outline" value={String(applicators.length)} label="Active applicators" />
+        <StatTile icon="people-outline" value={String(applicators.length)} label="Applicators" />
         <StatTile
-          icon="scan-outline"
-          value={String(totalScans)}
-          label="Scans this month"
+          icon="cash-outline"
+          value={String(totalPoints)}
+          label="Total Points held"
           iconColor={colors.secondary500}
           iconBg={colors.secondary50}
         />
@@ -59,24 +38,24 @@ export function AdminApplicatorsScreen() {
         renderItem={({ item }) => (
           <Card style={styles.row}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{item.name[0].toUpperCase()}</Text>
+              <Text style={styles.avatarText}>{(item.full_name || 'G')[0].toUpperCase()}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.name}</Text>
+              <Text style={styles.name}>{item.full_name || 'GoMax User'}</Text>
               <View style={styles.metaRow}>
-                <Ionicons name="location-outline" size={12} color={colors.neutral500} />
-                <Text style={styles.meta}>{item.city}</Text>
+                <Ionicons name="call-outline" size={12} color={colors.neutral500} />
+                <Text style={styles.meta}>{item.mobile_number ?? '—'}</Text>
               </View>
             </View>
             <View style={{ alignItems: 'flex-end', gap: 4 }}>
-              <Pill label={item.tier} tone="primary" size="sm" />
-              <View style={styles.countRow}>
-                <Ionicons name="scan-outline" size={11} color={colors.neutral500} />
-                <Text style={styles.points}>{item.scansThisMonth} scans</Text>
-              </View>
+              <Pill label={item.city || '—'} tone="primary" size="sm" />
               <View style={styles.countRow}>
                 <Ionicons name="cash-outline" size={11} color={colors.neutral500} />
-                <Text style={styles.points}>{item.pointsBalance} pts</Text>
+                <Text style={styles.points}>{item.points} pts</Text>
+              </View>
+              <View style={styles.countRow}>
+                <Ionicons name="trophy-outline" size={11} color={colors.neutral500} />
+                <Text style={styles.points}>{item.runs} runs</Text>
               </View>
             </View>
           </Card>

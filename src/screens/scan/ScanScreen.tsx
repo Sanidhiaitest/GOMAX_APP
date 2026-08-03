@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,32 +8,45 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { useApp } from '../../state/AppContext';
+import { scanCoupon } from '../../services/coupon';
+import { useMyScans } from '../../hooks/useAppData';
 
-const MOCK_PRODUCTS = ['GoMax Tile Adhesive 20kg', 'GoMax Waterproofing 5kg', 'GoMax Wall Putty 40kg'];
-const MOCK_POINTS = [15, 20, 25, 30];
-
-function randomOf<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+const ERROR_MESSAGES: Record<string, string> = {
+  invalid_code: "That code doesn't exist. Check the QR and try again.",
+  already_used: 'This coupon has already been scanned.',
+  not_an_applicator: 'Only Applicators can scan coupons.',
+};
 
 // Node 41:1262 — exact gradient, header pills, scan frame, and bottom sheet.
 export function ScanScreen() {
   const insets = useSafeAreaInsets();
-  const { addScan } = useApp();
+  const { refreshProfile } = useApp();
+  const { data: scanHistory, reload: reloadScans } = useMyScans();
   const [permission, requestPermission] = useCameraPermissions();
   const [torchOn, setTorchOn] = useState(false);
   const [tab, setTab] = useState<'scan' | 'history'>('scan');
   const [code, setCode] = useState('');
   const [locked, setLocked] = useState(false);
-  const [result, setResult] = useState<{ product: string; points: number } | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [result, setResult] = useState<{ ok: true; points: number } | { ok: false; message: string } | null>(null);
 
-  const handleScanSuccess = () => {
-    if (locked) return;
+  const submitCode = async (scannedCode: string) => {
+    if (locked || !scannedCode) return;
     setLocked(true);
-    const product = randomOf(MOCK_PRODUCTS);
-    const points = randomOf(MOCK_POINTS);
-    addScan({ productName: product, points });
-    setResult({ product, points });
+    setScanning(true);
+    try {
+      const res = await scanCoupon(scannedCode);
+      if (res.success) {
+        setResult({ ok: true, points: res.pointsAwarded });
+        await Promise.all([refreshProfile(), reloadScans()]);
+      } else {
+        setResult({ ok: false, message: ERROR_MESSAGES[res.error] ?? 'Could not scan this code. Try again.' });
+      }
+    } catch (e) {
+      setResult({ ok: false, message: e instanceof Error ? e.message : 'Could not scan this code. Try again.' });
+    } finally {
+      setScanning(false);
+    }
   };
 
   const closeResult = () => {
@@ -69,7 +82,7 @@ export function ScanScreen() {
           facing="back"
           enableTorch={torchOn}
           barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          onBarcodeScanned={handleScanSuccess}
+          onBarcodeScanned={(event) => submitCode(event.data)}
         />
       ) : (
         <LinearGradient colors={[colors.black, colors.gradientNavyDeep]} style={StyleSheet.absoluteFill} />
@@ -96,7 +109,7 @@ export function ScanScreen() {
         <>
           <View style={styles.statusPill}>
             <View style={styles.statusDot} />
-            <Text style={styles.statusText}>Place QR code inside the frame</Text>
+            <Text style={styles.statusText}>{scanning ? 'Checking code…' : 'Place QR code inside the frame'}</Text>
           </View>
 
           <View style={styles.frameWrap}>
@@ -104,14 +117,35 @@ export function ScanScreen() {
               {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
                 <View key={corner} style={[styles.bracket, bracketPosition[corner]]} />
               ))}
+              {scanning ? (
+                <View style={styles.frameLoading}>
+                  <ActivityIndicator color={colors.white} />
+                </View>
+              ) : null}
             </View>
             <Text style={styles.caption}>Point the camera at the QR Code on the bag</Text>
           </View>
         </>
       ) : (
-        <View style={styles.historyEmpty}>
-          <Ionicons name="time-outline" size={40} color="rgba(255,255,255,0.4)" />
-          <Text style={styles.historyEmptyText}>No scans yet today</Text>
+        <View style={styles.historyWrap}>
+          {scanHistory.length === 0 ? (
+            <View style={styles.historyEmpty}>
+              <Ionicons name="time-outline" size={40} color="rgba(255,255,255,0.4)" />
+              <Text style={styles.historyEmptyText}>No scans yet today</Text>
+            </View>
+          ) : (
+            scanHistory.map((item) => (
+              <View key={item.id} style={styles.historyRow}>
+                <View style={styles.historyIcon}>
+                  <Ionicons name="checkmark-circle" size={18} color="#14c87c" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.historyRowTitle}>+{item.points_awarded} points</Text>
+                  <Text style={styles.historyRowTime}>{new Date(item.created_at).toLocaleString()}</Text>
+                </View>
+              </View>
+            ))
+          )}
         </View>
       )}
 
@@ -131,8 +165,8 @@ export function ScanScreen() {
           />
           <Pressable
             style={[styles.manualSubmit, !code && styles.manualSubmitDisabled]}
-            disabled={!code}
-            onPress={handleScanSuccess}
+            disabled={!code || scanning}
+            onPress={() => submitCode(code)}
           >
             <Ionicons name="arrow-forward" size={20} color={colors.white} />
           </Pressable>
@@ -143,12 +177,15 @@ export function ScanScreen() {
       <Modal visible={!!result} transparent animationType="fade">
         <View style={styles.resultBackdrop}>
           <View style={styles.resultCard}>
-            <View style={styles.resultIcon}>
-              <Ionicons name="checkmark" size={32} color={colors.white} />
+            <View style={[styles.resultIcon, result && !result.ok && styles.resultIconError]}>
+              <Ionicons name={result?.ok ? 'checkmark' : 'close'} size={32} color={colors.white} />
             </View>
-            <Text style={styles.resultTitle}>Product Verified!</Text>
-            <Text style={styles.resultProduct}>{result?.product}</Text>
-            <Text style={styles.resultPoints}>+{result?.points} points</Text>
+            <Text style={styles.resultTitle}>{result?.ok ? 'Product Verified!' : "Couldn't scan"}</Text>
+            {result?.ok ? (
+              <Text style={styles.resultPoints}>+{result.points} points</Text>
+            ) : (
+              <Text style={styles.resultProduct}>{!result?.ok ? result?.message : ''}</Text>
+            )}
             <Button label="Done" onPress={closeResult} roboto />
           </View>
         </View>
@@ -220,8 +257,30 @@ const styles = StyleSheet.create({
   statusText: { ...m3Type.labelLarge, fontSize: 13, color: colors.white },
   frameWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 200 },
   frame: { width: 260, height: 260, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 16 },
+  frameLoading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   bracket: { position: 'absolute', width: 31, height: 31, borderColor: colors.primary700 },
   caption: { ...m3Type.labelLarge, color: '#e9e9f4', textAlign: 'center', marginTop: spacing.xl, paddingHorizontal: spacing.xxxl },
+  historyWrap: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: 140, marginBottom: 200, gap: spacing.md },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 14,
+    padding: spacing.md,
+  },
+  historyIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(20,200,124,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  historyRowTitle: { ...m3Type.labelLarge, fontSize: 13, color: colors.white, fontWeight: '600' },
+  historyRowTime: { ...m3Type.labelMedium, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
   historyEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginBottom: 200 },
   historyEmptyText: { ...m3Type.labelLarge, color: 'rgba(255,255,255,0.5)' },
   sheet: {
@@ -276,6 +335,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.sm,
   },
+  resultIconError: { backgroundColor: colors.danger },
   resultTitle: { ...m3Type.titleLarge, color: colors.neutral950 },
   resultProduct: { ...m3Type.labelLarge, color: colors.neutral500 },
   resultPoints: { ...m3Type.headlineMedium, color: colors.primary700, marginBottom: spacing.lg },

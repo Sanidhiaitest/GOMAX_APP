@@ -1,62 +1,35 @@
 export type OnboardingStackParamList = {
   Splash: undefined;
-  MobileNumber: undefined;
-  Otp: undefined;
-  RoleSelect: undefined;
-  // Mason path
-  BasicDetails: undefined;
-  Birthday: undefined;
-  // Dealer path
-  DealerBusinessDetails: undefined;
-  DealerPendingApproval: undefined;
-  // Salesman path
-  SalesmanCode: undefined;
+  Login: undefined;
+  Signup: undefined;
+  ForgotPassword: undefined;
 };
 
-export type MasonTabParamList = {
+// One shared tab set for Dealer / Contractor / Applicator — content inside
+// each tab adapts by role (e.g. Scan is Applicator-only), rather than
+// forking into three near-identical navigators.
+export type MainTabParamList = {
   Home: undefined;
-  Products: undefined;
   Scan: undefined;
-  Redeem: undefined;
-  Profile: undefined;
-};
-
-export type DealerTabParamList = {
-  Home: undefined;
-  Orders: undefined;
-  Ledger: undefined;
-  Profile: undefined;
-};
-
-export type SalesmanTabParamList = {
-  Home: undefined;
-  Dealers: undefined;
-  Dcr: undefined;
+  Wallet: undefined;
+  Gifts: undefined;
   Profile: undefined;
 };
 
 export type AdminTabParamList = {
   Dashboard: undefined;
-  DealerApprovals: undefined;
   Redemptions: undefined;
+  Gifts: undefined;
   Applicators: undefined;
+  LedgerSearch: undefined;
 };
 
 export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
-  Kyc: undefined;
-  SpinWheel: undefined;
-  Referral: undefined;
-  ScratchCards: undefined;
   Challenges: undefined;
-  OrdersList: undefined;
-  OrderDetail: { orderId: string };
-  Ledger: undefined;
-  OrderPlacement: undefined;
-  DealerDetail: { dealerId: string };
-  Dcr: undefined;
-  DealersList: undefined;
+  ScratchCards: undefined;
+  SpinWheel: undefined;
   AdminLogin: undefined;
   AdminMain: undefined;
 };

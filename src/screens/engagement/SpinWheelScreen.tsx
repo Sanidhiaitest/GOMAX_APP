@@ -8,6 +8,8 @@ import { Screen } from '../../components/Screen';
 import { PressableScale, RewardBurst, UnlockReveal } from '../../components/animations';
 import { Button } from '../../components/Button';
 import { useApp } from '../../state/AppContext';
+import { useSpinsUsedToday } from '../../hooks/useAppData';
+import { spinWheel } from '../../services/spin';
 import { RootStackParamList } from '../../navigation/types';
 import { softHaptic, successHaptic } from '../../utils/haptics';
 
@@ -55,43 +57,63 @@ function segmentPath(index: number, r: number) {
 }
 
 export function SpinWheelScreen({ navigation }: Props) {
-  const { addRuns } = useApp();
+  const { refreshProfile } = useApp();
+  const { data: spinsUsedToday, reload: reloadSpinsUsed } = useSpinsUsedToday();
   const rotation = useRef(new Animated.Value(0)).current;
   const [spinning, setSpinning] = useState(false);
-  const [spinsLeft, setSpinsLeft] = useState(DAILY_SPIN_LIMIT);
+  const [error, setError] = useState('');
   const [result, setResult] = useState<{ label: string; runs: number } | null>(null);
   const [burstTrigger, setBurstTrigger] = useState(0);
   const currentRotation = useRef(0);
 
+  const spinsLeft = Math.max(0, DAILY_SPIN_LIMIT - spinsUsedToday);
   const canSpin = !spinning && spinsLeft > 0;
 
-  const onSpin = () => {
+  const onSpin = async () => {
     if (!canSpin) return;
     setSpinning(true);
-    const winIndex = Math.floor(Math.random() * SEGMENTS.length);
-    const segmentCenter = winIndex * SEG_ANGLE + SEG_ANGLE / 2;
-    const extraSpins = 5 * 360;
-    const target = currentRotation.current + extraSpins + (360 - (segmentCenter % 360));
-
-    Animated.timing(rotation, {
-      toValue: target,
-      duration: 3200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
-      currentRotation.current = target % 360;
-      const won = SEGMENTS[winIndex];
-      if (won.runs > 0) {
-        addRuns(won.runs);
-        setBurstTrigger((n) => n + 1);
-        successHaptic();
-      } else {
-        softHaptic();
+    setError('');
+    try {
+      const res = await spinWheel();
+      if (!res.success) {
+        setSpinning(false);
+        if (res.error === 'daily_limit_reached') {
+          await reloadSpinsUsed();
+        } else {
+          setError('Could not spin right now. Try again.');
+        }
+        return;
       }
-      setResult({ label: won.label, runs: won.runs });
+
+      // Land on a segment matching the server's chosen prize so the wheel
+      // animation reflects the real (server-decided) outcome.
+      const winIndex = SEGMENTS.findIndex((s) => s.label === res.prizeLabel && s.runs === res.runsAwarded);
+      const resolvedIndex = winIndex >= 0 ? winIndex : 0;
+      const segmentCenter = resolvedIndex * SEG_ANGLE + SEG_ANGLE / 2;
+      const extraSpins = 5 * 360;
+      const target = currentRotation.current + extraSpins + (360 - (segmentCenter % 360));
+
+      Animated.timing(rotation, {
+        toValue: target,
+        duration: 3200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start(async () => {
+        currentRotation.current = target % 360;
+        if (res.runsAwarded > 0) {
+          setBurstTrigger((n) => n + 1);
+          successHaptic();
+        } else {
+          softHaptic();
+        }
+        setResult({ label: res.prizeLabel, runs: res.runsAwarded });
+        setSpinning(false);
+        await Promise.all([refreshProfile(), reloadSpinsUsed()]);
+      });
+    } catch (e) {
       setSpinning(false);
-      setSpinsLeft((n) => Math.max(0, n - 1));
-    });
+      setError(e instanceof Error ? e.message : 'Could not spin right now. Try again.');
+    }
   };
 
   const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '1deg'] });
@@ -162,6 +184,7 @@ export function SpinWheelScreen({ navigation }: Props) {
         </View>
 
         <Text style={styles.tapHint}>{canSpin ? 'Tap the wheel to spin' : 'New spins tomorrow'}</Text>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
 
       <Modal visible={!!result} transparent animationType="fade">
@@ -239,6 +262,7 @@ const styles = StyleSheet.create({
   },
   hubDisabled: { opacity: 0.5 },
   tapHint: { ...m3Type.labelMedium, color: colors.neutral400, textAlign: 'center' },
+  errorText: { ...m3Type.labelMedium, color: colors.danger, textAlign: 'center', marginTop: spacing.sm },
   resultBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
   resultCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xxl, alignItems: 'center', gap: spacing.sm, position: 'relative', overflow: 'hidden' },
   resultEmoji: { fontSize: 48 },

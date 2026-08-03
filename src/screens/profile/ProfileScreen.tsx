@@ -11,25 +11,18 @@ import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { GoMaxLogo } from '../../components/GoMaxLogo';
 import { useApp } from '../../state/AppContext';
-import { useMyMonthlyAchieved } from '../../hooks/useSupabaseData';
 import { RootStackParamList } from '../../navigation/types';
 import { softHaptic } from '../../utils/haptics';
 
 const ROLE_LABEL: Record<string, string> = {
-  mason: 'Applicator / Mason',
-  dealer: 'Dealer / Shop Owner',
-  salesman: 'Salesman',
+  dealer: 'Dealer',
+  contractor: 'Contractor',
+  applicator: 'Applicator',
+  admin: 'Admin',
 };
 
-const KYC_LABEL: Record<string, { label: string; tone: 'neutral' | 'warning' | 'success' }> = {
-  unverified: { label: 'Not verified', tone: 'neutral' },
-  pending: { label: 'Under review', tone: 'warning' },
-  verified: { label: 'Verified', tone: 'success' },
-};
-
-// Mason tier bands, purely a visual "progress within current tier" ring —
-// doesn't change loyaltyTier itself, just gives the hero card something more
-// premium/graphic than a flat badge to show, grounded in the real points count.
+// Points-based tier bands — purely a visual "progress" ring, doesn't change
+// anything, just gives the hero card something graphic to show.
 const TIER_BANDS = [
   { name: 'Bronze', min: 0, max: 500 },
   { name: 'Silver', min: 500, max: 1500 },
@@ -44,9 +37,7 @@ function tierRingPct(points: number) {
 }
 
 // A deterministic-looking (seeded, not random) block pattern standing in for
-// a scannable QR code — decorative only, nothing in this prototype actually
-// scans it. Same idea as a real ID-card QR: a fixed grid derived from the
-// member's own data, so it looks like *their* code, not a stock graphic.
+// a scannable QR code — decorative only.
 function idPattern(seed: string, grid = 7): boolean[] {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
@@ -89,116 +80,43 @@ function RingStat({ pct, icon, label }: { pct: number; icon: keyof typeof Ionico
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const {
-    fullName,
-    mobileNumber,
-    role,
-    city,
-    language,
-    loyaltyTier,
-    points,
-    kycStatus,
-    dealerBusiness,
-    dealerVerificationStatus,
-    employeeCode,
-    referralCode,
-    logout,
-  } = useApp();
-  const { data: achieved } = useMyMonthlyAchieved();
-  const SALESMAN_MONTHLY_TARGET = 250000;
-  const kyc = KYC_LABEL[kycStatus];
+  const { fullName, mobileNumber, role, city, address, upiId, bankAccountNumber, points, referralCode, logOut } = useApp();
 
-  // logout() only resets AppContext state — it never moves the navigator.
-  // Without an explicit reset here, "Main" stays mounted and RoleTabRouter's
-  // role === null fallback silently re-renders the Mason tabs, leaving a
+  // logOut() only resets AppContext state — it never moves the navigator.
+  // Without an explicit reset here, "Main" stays mounted, leaving a
   // "logged out" user stuck inside the app with no way back to onboarding.
-  // Mirrors the pattern AdminDashboardScreen already uses for admin logout.
   const onLogout = async () => {
-    await logout();
+    await logOut();
     navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
   };
 
   const memberId = `GMX${mobileNumber ? mobileNumber.slice(-6) : '000000'}`;
   const pattern = idPattern(memberId + fullName);
+  const ring = { pct: tierRingPct(points), icon: 'star' as const, label: `${points} pts` };
 
-  const ring =
-    role === 'dealer'
-      ? {
-          pct: dealerBusiness.creditLimit ? Math.min(100, Math.round((dealerBusiness.outstanding / dealerBusiness.creditLimit) * 100)) : 0,
-          icon: 'card-outline' as const,
-          label: 'Credit used',
-        }
-      : role === 'salesman'
-      ? { pct: Math.min(100, Math.round((achieved / SALESMAN_MONTHLY_TARGET) * 100)), icon: 'trending-up-outline' as const, label: 'Target hit' }
-      : { pct: tierRingPct(points), icon: 'star' as const, label: `${loyaltyTier} tier` };
-
-  const idCardFields =
-    role === 'dealer'
-      ? [
-          { label: 'Shop Name', value: dealerBusiness.shopName || '—' },
-          { label: 'GST Number', value: dealerBusiness.gstNumber || '—' },
-        ]
-      : role === 'salesman'
-      ? [
-          { label: 'Employee Code', value: employeeCode || '—' },
-          { label: 'Region', value: city || '—' },
-        ]
-      : [
-          { label: 'Referral Code', value: referralCode },
-          { label: 'City / District', value: city || '—' },
-        ];
+  const idCardFields = [
+    { label: 'Referral Code', value: referralCode || '—' },
+    { label: 'City', value: city || '—' },
+  ];
 
   type Shortcut = { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void };
-  const shortcuts: Shortcut[] =
-    role === 'dealer'
-      ? [
-          { icon: 'receipt-outline', label: 'Orders', onPress: () => navigation.navigate('OrdersList') },
-          { icon: 'wallet-outline', label: 'Ledger', onPress: () => navigation.navigate('Ledger') },
-          { icon: 'add-circle-outline', label: 'New Order', onPress: () => navigation.navigate('OrderPlacement') },
-        ]
-      : role === 'salesman'
-      ? [
-          { icon: 'people-outline', label: 'Dealers', onPress: () => navigation.navigate('DealersList') },
-          { icon: 'clipboard-outline', label: 'DCR', onPress: () => navigation.navigate('Dcr') },
-        ]
-      : [
-          { icon: 'wallet-outline', label: 'Wallet', onPress: () => navigation.getParent()?.navigate('Redeem' as never) },
-          { icon: 'qr-code-outline', label: 'Scan', onPress: () => navigation.getParent()?.navigate('Scan' as never) },
-          { icon: 'people-outline', label: 'Refer', onPress: () => navigation.navigate('Referral') },
-          { icon: 'trophy-outline', label: 'Challenges', onPress: () => navigation.navigate('Challenges') },
-        ];
+  const shortcuts: Shortcut[] = [
+    { icon: 'wallet-outline', label: 'Wallet', onPress: () => navigation.getParent()?.navigate('Main' as never) },
+    ...(role === 'applicator'
+      ? ([{ icon: 'qr-code-outline' as const, label: 'Scan', onPress: () => navigation.getParent()?.navigate('Main' as never) }] as Shortcut[])
+      : []),
+    { icon: 'gift-outline', label: 'Gifts', onPress: () => navigation.getParent()?.navigate('Main' as never) },
+    { icon: 'trophy-outline', label: 'Challenges', onPress: () => navigation.navigate('Challenges') },
+  ];
 
-  type Row = {
-    icon: keyof typeof Ionicons.glyphMap;
-    label: string;
-    value: string;
-    onPress?: () => void;
-    pillTone?: 'neutral' | 'warning' | 'success';
-  };
+  type Row = { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; pillTone?: 'neutral' | 'warning' | 'success' };
 
   const rows: Row[] = [
     { icon: 'call-outline', label: 'Mobile number', value: mobileNumber ? `+91 ${mobileNumber}` : '—' },
+    { icon: 'location-outline', label: 'Address', value: address || '—' },
+    { icon: 'card-outline', label: 'UPI ID', value: upiId || '—' },
+    { icon: 'business-outline', label: 'Bank account', value: bankAccountNumber ? `••••${bankAccountNumber.slice(-4)}` : '—' },
   ];
-
-  if (role === 'dealer') {
-    rows.push({
-      icon: 'checkmark-done-outline',
-      label: 'Verification status',
-      value: dealerVerificationStatus === 'verified' ? 'Verified' : 'Pending',
-      pillTone: dealerVerificationStatus === 'verified' ? 'success' : 'warning',
-    });
-  } else if (role !== 'salesman') {
-    rows.push(
-      { icon: 'language-outline', label: 'Language', value: language || '—' },
-      {
-        icon: 'shield-checkmark-outline',
-        label: 'KYC status',
-        value: kyc.label,
-        onPress: () => navigation.navigate('Kyc'),
-        pillTone: kyc.tone,
-      }
-    );
-  }
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
@@ -264,11 +182,7 @@ export function ProfileScreen() {
 
         <Card padded={false}>
           {rows.map((row, i) => (
-            <Pressable
-              key={row.label}
-              onPress={row.onPress}
-              style={[styles.row, i < rows.length - 1 && styles.rowBorder]}
-            >
+            <View key={row.label} style={[styles.row, i < rows.length - 1 && styles.rowBorder]}>
               <Ionicons name={row.icon} size={20} color={colors.textSecondary} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowLabel}>{row.label}</Text>
@@ -280,8 +194,7 @@ export function ProfileScreen() {
                   <Text style={styles.rowValue}>{row.value}</Text>
                 )}
               </View>
-              {row.onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
-            </Pressable>
+            </View>
           ))}
         </Card>
 

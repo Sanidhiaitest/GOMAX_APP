@@ -6,22 +6,34 @@ import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
-import { useApp } from '../../state/AppContext';
+import { useAllRedemptions } from '../../hooks/useAppData';
+import { decideRedemption } from '../../services/admin';
+
+const STATUS_META: Record<string, { label: string; tone: 'success' | 'danger' }> = {
+  approved: { label: 'Approved', tone: 'success' },
+  paid: { label: 'Paid', tone: 'success' },
+  rejected: { label: 'Rejected', tone: 'danger' },
+};
 
 export function AdminRedemptionsScreen() {
-  const { redemptionRequests, decideRedemption } = useApp();
-  const pending = redemptionRequests.filter((r) => r.status === 'pending');
-  const resolved = redemptionRequests.filter((r) => r.status !== 'pending');
+  const { data: redemptions, reload } = useAllRedemptions();
+  const pending = redemptions.filter((r) => r.status === 'pending');
+  const resolved = redemptions.filter((r) => r.status !== 'pending');
+
+  const onDecide = async (id: string, decision: 'approved' | 'rejected') => {
+    await decideRedemption(id, decision);
+    await reload();
+  };
 
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
         <Text style={styles.title}>Redemptions</Text>
-        <Text style={styles.subtitle}>≥200 pts needs review · 4hr SLA</Text>
+        <Text style={styles.subtitle}>₹500–₹5,000 per request · ₹15,000/month cap</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {redemptionRequests.length === 0 ? (
+        {redemptions.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="cash-outline" size={40} color={colors.neutral400} />
             <Text style={styles.emptyText}>No redemption requests yet</Text>
@@ -32,36 +44,37 @@ export function AdminRedemptionsScreen() {
               <Card key={req.id} style={styles.card}>
                 <View style={styles.rowTop}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.name}>{req.applicantName}</Text>
-                    <Text style={styles.meta}>{req.upiId} · {req.requestedAt}</Text>
+                    <Text style={styles.name}>{req.user?.full_name || 'GoMax User'}</Text>
+                    <Text style={styles.meta}>
+                      {req.upi_id || 'Bank transfer'} · {new Date(req.requested_at).toLocaleDateString()}
+                    </Text>
                   </View>
-                  <Text style={styles.amount}>{req.amount} pts</Text>
+                  <Text style={styles.amount}>₹{Number(req.amount).toLocaleString('en-IN')}</Text>
                 </View>
                 <View style={styles.actionRow}>
                   <View style={{ flex: 1 }}>
-                    <Button label="Approve" icon="checkmark" onPress={() => decideRedemption(req.id, 'approved')} />
+                    <Button label="Approve" icon="checkmark" onPress={() => onDecide(req.id, 'approved')} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Button label="Reject" icon="close" variant="secondary" onPress={() => decideRedemption(req.id, 'rejected')} />
+                    <Button label="Reject" icon="close" variant="secondary" onPress={() => onDecide(req.id, 'rejected')} />
                   </View>
                 </View>
               </Card>
             ))}
 
             {resolved.length > 0 ? <Text style={styles.sectionTitle}>Resolved</Text> : null}
-            {resolved.map((req) => (
-              <Card key={req.id} style={styles.rowTop}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>{req.applicantName}</Text>
-                  <Text style={styles.meta}>{req.amount} pts · {req.upiId}</Text>
-                </View>
-                <Pill
-                  label={req.status === 'approved' ? 'Approved' : 'Rejected'}
-                  tone={req.status === 'approved' ? 'success' : 'danger'}
-                  size="sm"
-                />
-              </Card>
-            ))}
+            {resolved.map((req) => {
+              const meta = STATUS_META[req.status] ?? STATUS_META.rejected;
+              return (
+                <Card key={req.id} style={styles.rowTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.name}>{req.user?.full_name || 'GoMax User'}</Text>
+                    <Text style={styles.meta}>₹{Number(req.amount).toLocaleString('en-IN')} · {req.upi_id || 'Bank transfer'}</Text>
+                  </View>
+                  <Pill label={meta.label} tone={meta.tone} size="sm" />
+                </Card>
+              );
+            })}
           </>
         )}
       </ScrollView>

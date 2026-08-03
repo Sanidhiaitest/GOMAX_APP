@@ -1,55 +1,12 @@
 import { supabase } from '../lib/supabase';
 import type { Tables } from '../lib/database.types';
 
-export type ScanRow = Tables<'scan_activity'>;
 export type ChallengeRow = Tables<'challenges'>;
 export type ChallengeProgressRow = Tables<'challenge_progress'>;
 export type BadgeRow = Tables<'badges'>;
 export type UserBadgeRow = Tables<'user_badges'>;
 export type ScratchCardRow = Tables<'scratch_cards'>;
 export type UserScratchCardRow = Tables<'user_scratch_cards'>;
-export type RedemptionRow = Tables<'redemption_requests'>;
-export type ReferralRow = Tables<'referrals'>;
-
-/** Records a QR-code scan for the signed-in user and credits points to their profile. */
-export async function recordScan(params: { productId?: string; qrCode?: string; points: number }) {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Not authenticated');
-
-  const { data: scan, error: scanErr } = await supabase
-    .from('scan_activity')
-    .insert({ user_id: auth.user.id, product_id: params.productId, qr_code: params.qrCode, points: params.points })
-    .select('*')
-    .single();
-  if (scanErr) throw scanErr;
-
-  const { data: profile, error: profErr } = await supabase
-    .from('profiles')
-    .select('points')
-    .eq('id', auth.user.id)
-    .single();
-  if (profErr) throw profErr;
-
-  const { error: updErr } = await supabase
-    .from('profiles')
-    .update({ points: (profile?.points ?? 0) + params.points })
-    .eq('id', auth.user.id);
-  if (updErr) throw updErr;
-
-  return scan;
-}
-
-export async function listMyScans(): Promise<ScanRow[]> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return [];
-  const { data, error } = await supabase
-    .from('scan_activity')
-    .select('*')
-    .eq('user_id', auth.user.id)
-    .order('scanned_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
-}
 
 export async function listChallenges(): Promise<ChallengeRow[]> {
   const { data, error } = await supabase.from('challenges').select('*').eq('active', true);
@@ -60,12 +17,18 @@ export async function listChallenges(): Promise<ChallengeRow[]> {
 export async function listMyChallengeProgress(): Promise<ChallengeProgressRow[]> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return [];
-  const { data, error } = await supabase
-    .from('challenge_progress')
-    .select('*')
-    .eq('user_id', auth.user.id);
+  const { data, error } = await supabase.from('challenge_progress').select('*').eq('user_id', auth.user.id);
   if (error) throw error;
   return data ?? [];
+}
+
+/** Marks a challenge complete and credits its Runs reward, atomically, via the claim_challenge() RPC. */
+export async function claimChallenge(challengeId: string) {
+  const { data, error } = await supabase.rpc('claim_challenge', { p_challenge_id: challengeId });
+  if (error) throw error;
+  const payload = data as { success: boolean; error?: string; runs_awarded?: number };
+  if (!payload.success) throw new Error(payload.error ?? 'Could not claim challenge');
+  return payload;
 }
 
 export async function listBadges(): Promise<BadgeRow[]> {
@@ -110,9 +73,7 @@ export async function ensureMyScratchCards(): Promise<MyScratchCard[]> {
   const existingCardIds = new Set((existing ?? []).map((e) => e.card_id));
   const missing = (templates ?? []).filter((t) => !existingCardIds.has(t.id));
   if (missing.length > 0) {
-    await supabase
-      .from('user_scratch_cards')
-      .insert(missing.map((t) => ({ user_id: auth.user!.id, card_id: t.id })));
+    await supabase.from('user_scratch_cards').insert(missing.map((t) => ({ user_id: auth.user!.id, card_id: t.id })));
   }
 
   const { data: all } = await supabase
@@ -130,27 +91,13 @@ export async function ensureMyScratchCards(): Promise<MyScratchCard[]> {
   }));
 }
 
-export async function listMyScratchCards(): Promise<UserScratchCardRow[]> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return [];
-  const { data, error } = await supabase
-    .from('user_scratch_cards')
-    .select('*')
-    .eq('user_id', auth.user.id)
-    .order('created_at', { ascending: false });
+/** Reveals a scratch card and credits its Runs reward, atomically, via the reveal_scratch_card() RPC. */
+export async function scratchCard(userCardId: string) {
+  const { data, error } = await supabase.rpc('reveal_scratch_card', { p_user_card_id: userCardId });
   if (error) throw error;
-  return data ?? [];
-}
-
-export async function scratchCard(userCardId: string): Promise<UserScratchCardRow> {
-  const { data, error } = await supabase
-    .from('user_scratch_cards')
-    .update({ scratched: true, scratched_at: new Date().toISOString() })
-    .eq('id', userCardId)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data;
+  const payload = data as { success: boolean; error?: string; runs_awarded?: number };
+  if (!payload.success) throw new Error(payload.error ?? 'Could not reveal card');
+  return payload;
 }
 
 export async function listLeaderboard(limit = 10) {
@@ -158,7 +105,7 @@ export async function listLeaderboard(limit = 10) {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, points')
-    .eq('role', 'mason')
+    .eq('role', 'applicator')
     .order('points', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -168,102 +115,4 @@ export async function listLeaderboard(limit = 10) {
     scans: p.points,
     isYou: p.id === auth.user?.id,
   }));
-}
-
-/** Marks a challenge as complete for the signed-in user and credits its reward. */
-export async function claimChallenge(challenge: ChallengeRow) {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Not authenticated');
-
-  await supabase.from('challenge_progress').upsert(
-    {
-      user_id: auth.user.id,
-      challenge_id: challenge.id,
-      progress: challenge.target,
-      completed_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,challenge_id' }
-  );
-
-  if (challenge.reward_points || challenge.reward_runs) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('points, runs')
-      .eq('id', auth.user.id)
-      .single();
-    await supabase
-      .from('profiles')
-      .update({
-        points: (profile?.points ?? 0) + challenge.reward_points,
-        runs: (profile?.runs ?? 0) + challenge.reward_runs,
-      })
-      .eq('id', auth.user.id);
-  }
-}
-
-const REDEMPTION_AUTO_APPROVE_CEILING = 200;
-
-/** Requests a Points redemption. Amounts under the ceiling auto-approve; the rest queue for admin review. */
-export async function redeemPoints(amount: number, upiId: string): Promise<RedemptionRow> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Not authenticated');
-
-  const autoApproved = amount < REDEMPTION_AUTO_APPROVE_CEILING;
-  const { data: request, error: reqErr } = await supabase
-    .from('redemption_requests')
-    .insert({ user_id: auth.user.id, amount, upi_id: upiId, status: autoApproved ? 'approved' : 'pending' })
-    .select('*')
-    .single();
-  if (reqErr) throw reqErr;
-
-  const { data: profile, error: profErr } = await supabase
-    .from('profiles')
-    .select('points')
-    .eq('id', auth.user.id)
-    .single();
-  if (profErr) throw profErr;
-
-  const { error: updErr } = await supabase
-    .from('profiles')
-    .update({ points: Math.max(0, (profile?.points ?? 0) - amount) })
-    .eq('id', auth.user.id);
-  if (updErr) throw updErr;
-
-  return request;
-}
-
-export async function listMyRedemptions(): Promise<RedemptionRow[]> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return [];
-  const { data, error } = await supabase
-    .from('redemption_requests')
-    .select('*')
-    .eq('user_id', auth.user.id)
-    .order('requested_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
-}
-
-export async function createReferral(referredMobile: string): Promise<ReferralRow> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Not authenticated');
-  const { data, error } = await supabase
-    .from('referrals')
-    .insert({ referrer_id: auth.user.id, referred_mobile: referredMobile })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data;
-}
-
-export async function listMyReferrals(): Promise<ReferralRow[]> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return [];
-  const { data, error } = await supabase
-    .from('referrals')
-    .select('*')
-    .eq('referrer_id', auth.user.id)
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data ?? [];
 }
