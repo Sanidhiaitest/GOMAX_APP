@@ -14,7 +14,7 @@ import {
   useBadges,
   useMyUnlockedBadges,
   useLeaderboard,
-} from '../../hooks/useSupabaseData';
+} from '../../hooks/useAppData';
 import { claimChallenge as claimChallengeService, ChallengeRow } from '../../services/engagement';
 import { RootStackParamList } from '../../navigation/types';
 import { successHaptic } from '../../utils/haptics';
@@ -48,7 +48,7 @@ export function ChallengesScreen({ navigation }: Props) {
     if (progressFor(c.id)?.completed_at || claiming[c.id]) return;
     setClaiming((prev) => ({ ...prev, [c.id]: true }));
     try {
-      await claimChallengeService(c);
+      await claimChallengeService(c.id);
       setBurstTriggers((prev) => ({ ...prev, [c.id]: (prev[c.id] ?? 0) + 1 }));
       successHaptic();
       await Promise.all([reloadProgress(), refreshProfile()]);

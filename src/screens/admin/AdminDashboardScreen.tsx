@@ -10,26 +10,21 @@ import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
 import { StatTile } from '../../components/StatTile';
 import { useApp } from '../../state/AppContext';
-import { useApplicators, useFraudFlags, useKpiSummary, usePendingDealerApprovals, usePendingRedemptions } from '../../hooks/useSupabaseData';
+import { useApplicators, useKpiSummary, usePendingRedemptions, useGiftRedemptionsAdmin } from '../../hooks/useAppData';
 import { AdminTabParamList, RootStackParamList } from '../../navigation/types';
 
 type Nav = BottomTabNavigationProp<AdminTabParamList> & NativeStackNavigationProp<RootStackParamList>;
 
 export function AdminDashboardScreen() {
   const navigation = useNavigation<Nav>();
-  const { role, adminLogout } = useApp();
+  const { adminLogout } = useApp();
   const { data: kpiSummary } = useKpiSummary();
-  const { data: fraudFlags } = useFraudFlags();
-  const { data: otherApplicators } = useApplicators();
-  const { data: pendingDealerApprovals } = usePendingDealerApprovals();
+  const { data: applicators } = useApplicators();
   const { data: pendingRedemptions } = usePendingRedemptions();
+  const { data: pendingGifts } = useGiftRedemptionsAdmin('pending');
 
-  const pendingDealerCount = pendingDealerApprovals.length;
-  const pendingRedemptionCount = pendingRedemptions.length;
-  const activeApplicators = otherApplicators.length;
-
-  const onLogout = () => {
-    adminLogout();
+  const onLogout = async () => {
+    await adminLogout();
     navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
   };
 
@@ -38,7 +33,7 @@ export function AdminDashboardScreen() {
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>GoMax HQ</Text>
-          <Text style={styles.subtitle}>Live across Mason, Dealer & Salesman apps</Text>
+          <Text style={styles.subtitle}>Live across Dealer, Contractor & Applicator apps</Text>
         </View>
         <Pressable
           onPress={onLogout}
@@ -53,20 +48,20 @@ export function AdminDashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.statGrid}>
-          <StatTile icon="people-outline" value={String(activeApplicators)} label="Active applicators" />
+          <StatTile icon="people-outline" value={String(applicators.length)} label="Applicators" />
           <StatTile icon="scan-outline" value={String(kpiSummary.scansToday)} label="Scans today" iconColor={colors.secondary500} iconBg={colors.secondary50} />
         </View>
         <View style={styles.statGrid}>
           <StatTile
-            icon="storefront-outline"
-            value={String(pendingDealerCount)}
-            label="Dealer approvals due"
-            iconColor={colors.warning}
-            iconBg="#fff4e0"
+            icon="trending-up-outline"
+            value={String(kpiSummary.pointsIssuedThisMonth)}
+            label="Points issued this month"
+            iconColor={colors.secondary500}
+            iconBg={colors.secondary50}
           />
           <StatTile
             icon="cash-outline"
-            value={String(pendingRedemptionCount)}
+            value={String(pendingRedemptions.length)}
             label="Redemptions due"
             iconColor={colors.warning}
             iconBg="#fff4e0"
@@ -75,42 +70,44 @@ export function AdminDashboardScreen() {
 
         <Text style={styles.sectionTitle}>Needs your attention</Text>
         <View style={{ gap: spacing.md }}>
-          <Pressable onPress={() => navigation.navigate('DealerApprovals')}>
-            <Card style={styles.attentionRow}>
-              <View style={[styles.attentionIcon, { backgroundColor: '#fff4e0' }]}>
-                <Ionicons name="storefront-outline" size={20} color={colors.warning} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.attentionTitle}>Dealer applications</Text>
-                <Text style={styles.attentionSubtitle}>Field verification + credit check pending</Text>
-              </View>
-              <Pill label={String(pendingDealerCount)} tone="warning" size="sm" />
-            </Card>
-          </Pressable>
-
           <Pressable onPress={() => navigation.navigate('Redemptions')}>
             <Card style={styles.attentionRow}>
               <View style={[styles.attentionIcon, { backgroundColor: colors.orange50 }]}>
                 <Ionicons name="cash-outline" size={20} color={colors.primary700} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.attentionTitle}>Redemption requests</Text>
-                <Text style={styles.attentionSubtitle}>≥200 pts — 4hr SLA</Text>
+                <Text style={styles.attentionTitle}>Points redemption requests</Text>
+                <Text style={styles.attentionSubtitle}>₹500–₹5,000 per request</Text>
               </View>
-              <Pill label={String(pendingRedemptionCount)} tone="primary" size="sm" />
+              <Pill label={String(pendingRedemptions.length)} tone="primary" size="sm" />
             </Card>
           </Pressable>
 
-          <Card style={styles.attentionRow}>
-            <View style={[styles.attentionIcon, { backgroundColor: '#fdeaea' }]}>
-              <Ionicons name="warning-outline" size={20} color={colors.danger} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.attentionTitle}>Fraud flags</Text>
-              <Text style={styles.attentionSubtitle}>{fraudFlags[0]?.title}</Text>
-            </View>
-            <Pill label={String(fraudFlags.length)} tone="danger" size="sm" />
-          </Card>
+          <Pressable onPress={() => navigation.navigate('Gifts')}>
+            <Card style={styles.attentionRow}>
+              <View style={[styles.attentionIcon, { backgroundColor: '#fff4e0' }]}>
+                <Ionicons name="gift-outline" size={20} color={colors.warning} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attentionTitle}>Gift claims to fulfil</Text>
+                <Text style={styles.attentionSubtitle}>Pending → Shipped → Delivered</Text>
+              </View>
+              <Pill label={String(pendingGifts.length)} tone="warning" size="sm" />
+            </Card>
+          </Pressable>
+
+          <Pressable onPress={() => navigation.navigate('LedgerSearch')}>
+            <Card style={styles.attentionRow}>
+              <View style={[styles.attentionIcon, { backgroundColor: colors.secondary50 }]}>
+                <Ionicons name="search-outline" size={20} color={colors.secondary500} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attentionTitle}>Search a person&apos;s ledger</Text>
+                <Text style={styles.attentionSubtitle}>Full history for dispute resolution</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />
+            </Card>
+          </Pressable>
         </View>
       </ScrollView>
     </Screen>

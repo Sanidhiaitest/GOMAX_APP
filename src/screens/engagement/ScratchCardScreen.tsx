@@ -6,7 +6,7 @@ import { colors, m3Type, radius, spacing } from '../../theme';
 import { Screen } from '../../components/Screen';
 import { RewardBurst, UnlockReveal } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
-import { useMyScratchCardsJoined } from '../../hooks/useSupabaseData';
+import { useScratchCards } from '../../hooks/useAppData';
 import { scratchCard as scratchCardService, MyScratchCard } from '../../services/engagement';
 import { RootStackParamList } from '../../navigation/types';
 import { successHaptic } from '../../utils/haptics';
@@ -17,8 +17,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ScratchCards'>;
 // than a literal finger-scratch gesture — a real scratch mask (e.g. via
 // react-native-skia) would be a good upgrade once this loop is validated.
 export function ScratchCardScreen({ navigation }: Props) {
-  const { addRuns } = useApp();
-  const { data: loadedCards, reload } = useMyScratchCardsJoined();
+  const { refreshProfile } = useApp();
+  const { data: loadedCards, reload } = useScratchCards();
   const [cards, setCards] = useState<MyScratchCard[]>([]);
   const [burstTriggers, setBurstTriggers] = useState<Record<string, number>>({});
   const flips = useRef<Record<string, Animated.Value>>({}).current;
@@ -37,7 +37,7 @@ export function ScratchCardScreen({ navigation }: Props) {
     setBurstTriggers((prev) => ({ ...prev, [card.id]: (prev[card.id] ?? 0) + 1 }));
     successHaptic();
     await scratchCardService(card.id);
-    await addRuns(card.reward);
+    await refreshProfile();
     reload();
   };
 

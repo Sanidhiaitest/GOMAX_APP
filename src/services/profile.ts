@@ -2,7 +2,6 @@ import { supabase } from '../lib/supabase';
 import type { Tables, TablesUpdate } from '../lib/database.types';
 
 export type Profile = Tables<'profiles'>;
-export type DealerBusinessRow = Tables<'dealer_business_details'>;
 
 export async function getMyProfile(): Promise<Profile | null> {
   const { data: auth } = await supabase.auth.getUser();
@@ -29,28 +28,10 @@ export async function updateMyProfile(patch: TablesUpdate<'profiles'>): Promise<
   return data;
 }
 
-export async function getMyDealerBusiness(): Promise<DealerBusinessRow | null> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
-  const { data, error } = await supabase
-    .from('dealer_business_details')
-    .select('*')
-    .eq('dealer_id', auth.user.id)
-    .maybeSingle();
+/** Given a referral code, returns the role of the person it belongs to (used to gate which roles a new signup may pick). Works pre-auth via a SECURITY DEFINER RPC — never a direct table read. */
+export async function getReferrerRoleByCode(referralCode: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_referrer_role_by_code', { p_referral_code: referralCode });
   if (error) throw error;
-  return data;
-}
-
-export async function upsertMyDealerBusiness(
-  patch: Omit<TablesUpdate<'dealer_business_details'>, 'dealer_id'>
-): Promise<DealerBusinessRow> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Not authenticated');
-  const { data, error } = await supabase
-    .from('dealer_business_details')
-    .upsert({ ...patch, dealer_id: auth.user.id }, { onConflict: 'dealer_id' })
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data;
+  const payload = data as { found: boolean; role?: string };
+  return payload.found ? payload.role ?? null : null;
 }

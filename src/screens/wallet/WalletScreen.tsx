@@ -1,48 +1,47 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
 import { Pill } from '../../components/Pill';
-import { Screen } from '../../components/Screen';
 import { RewardBurst, UnlockReveal } from '../../components/animations';
-import { useApp, REDEMPTION_AUTO_APPROVE_CEILING, RedemptionStatus } from '../../state/AppContext';
+import { useApp } from '../../state/AppContext';
+import { useMyRedemptions, useRedeemedThisMonth } from '../../hooks/useAppData';
+import {
+  requestRedemption,
+  MIN_REDEMPTION_POINTS,
+  MAX_REDEMPTION_POINTS_PER_REQUEST,
+  MAX_REDEMPTION_POINTS_PER_MONTH,
+} from '../../services/wallet';
 import { successHaptic } from '../../utils/haptics';
 
-const QUICK_AMOUNTS = [200, 500, 1000];
+const QUICK_AMOUNTS = [500, 1000, 2500];
 
-// Node 46:33 — exact colors/copy from Figma. "Minimum 200 pts" banner copy is
-// verbatim from the design; the PRD's ₹50/4hr-SLA rules are applied silently
-// via MIN_REDEMPTION_POINTS/AUTO_APPROVE_CEILING without changing the visible text.
-const MIN_REDEMPTION_POINTS = 50;
-const AUTO_APPROVE_CEILING = REDEMPTION_AUTO_APPROVE_CEILING;
-
-// Mirrors the OrdersListScreen STATUS_META idiom: one lookup from state to
-// {tone, icon, label} so every redemption status renders as a Pill instead
-// of plain text anywhere in the app.
 const REDEMPTION_STATUS_META: Record<
-  RedemptionStatus,
+  string,
   { tone: 'warning' | 'success' | 'danger'; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
   pending: { tone: 'warning', icon: 'hourglass-outline', label: 'Pending' },
   approved: { tone: 'success', icon: 'checkmark-circle', label: 'Approved' },
+  paid: { tone: 'success', icon: 'checkmark-done-circle', label: 'Paid' },
   rejected: { tone: 'danger', icon: 'close-circle', label: 'Rejected' },
 };
 
-// UPI ids are semi-sensitive — history shows only the last 4 characters,
-// masking the rest with bullets.
 function maskUpi(upiId: string) {
   if (upiId.length <= 4) return upiId;
   return '•'.repeat(upiId.length - 4) + upiId.slice(-4);
 }
 
 export function WalletScreen() {
-  const { points, runs, redeemPoints, redemptionRequests, fullName } = useApp();
-  const [upiId, setUpiId] = useState('');
+  const { points, runs, upiId, refreshProfile } = useApp();
+  const { data: myRedemptions, reload: reloadRedemptions } = useMyRedemptions();
+  const { data: redeemedThisMonth, reload: reloadMonthTotal } = useRedeemedThisMonth();
   const [selectedAmount, setSelectedAmount] = useState<number | 'all' | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [burstTrigger, setBurstTrigger] = useState(0);
 
   useEffect(() => {
@@ -52,20 +51,42 @@ export function WalletScreen() {
     }
   }, [success]);
 
-  const amount = selectedAmount === 'all' ? points : selectedAmount ?? 0;
-  const isValidUpi = /^[\w.-]{2,}@[a-zA-Z]{2,}$/.test(upiId);
-  const canSubmit = isValidUpi && amount >= MIN_REDEMPTION_POINTS && amount <= points;
+  const remainingThisMonth = Math.max(0, MAX_REDEMPTION_POINTS_PER_MONTH - redeemedThisMonth);
+  const amountRaw = selectedAmount === 'all' ? Math.min(points, MAX_REDEMPTION_POINTS_PER_REQUEST) : selectedAmount ?? 0;
+  const amount = amountRaw;
+  const hasPayoutMethod = upiId.length > 0;
+  const canSubmit =
+    hasPayoutMethod &&
+    amount >= MIN_REDEMPTION_POINTS &&
+    amount <= MAX_REDEMPTION_POINTS_PER_REQUEST &&
+    amount <= points &&
+    amount <= remainingThisMonth &&
+    !submitting;
 
-  const onSubmit = () => {
-    redeemPoints(amount, upiId);
-    setSuccess(true);
-    setSelectedAmount(null);
+  const onSubmit = async () => {
+    setSubmitting(true);
+    setErrorMsg('');
+    try {
+      const res = await requestRedemption(amount);
+      if (!res.success) {
+        if (res.error === 'monthly_limit_exceeded') {
+          setErrorMsg(`Only ₹${res.remainingThisMonth ?? remainingThisMonth} left of your ₹15,000 monthly limit.`);
+        } else if (res.error === 'insufficient_balance') {
+          setErrorMsg("You don't have enough Points for that.");
+        } else {
+          setErrorMsg('Could not submit request. Try again.');
+        }
+        return;
+      }
+      setSuccess(true);
+      setSelectedAmount(null);
+      await Promise.all([refreshProfile(), reloadRedemptions(), reloadMonthTotal()]);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Could not submit request. Try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  // The mock app is single-mason-context, but redeemPoints stamps every
-  // request with the applicant's name — filter on it so this stays correct
-  // if the mock state ever grows a second applicant.
-  const myRedemptions = redemptionRequests.filter((r) => r.applicantName === (fullName || 'GoMax User'));
 
   return (
     <View style={styles.root}>
@@ -122,20 +143,15 @@ export function WalletScreen() {
 
           <View style={styles.infoBanner}>
             <Text style={styles.infoBannerEmoji}>ℹ️</Text>
-            <Text style={styles.infoBannerText}>Minimum 200 pts · Paid to your UPI</Text>
+            <Text style={styles.infoBannerText}>
+              Min ₹{MIN_REDEMPTION_POINTS} · Max ₹{MAX_REDEMPTION_POINTS_PER_REQUEST}/request · ₹{remainingThisMonth} left this month
+            </Text>
           </View>
 
-          <Text style={styles.fieldLabel}>UPI ID</Text>
+          <Text style={styles.fieldLabel}>PAYOUT TO</Text>
           <View style={styles.upiField}>
             <Text style={styles.upiFieldEmoji}>📱</Text>
-            <TextInput
-              style={styles.upiInput}
-              value={upiId}
-              onChangeText={setUpiId}
-              placeholder="yourname@upi"
-              placeholderTextColor="rgba(10,22,40,0.5)"
-              autoCapitalize="none"
-            />
+            <Text style={styles.upiInput}>{upiId || 'Add a UPI ID / bank account in your Profile'}</Text>
           </View>
 
           <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>SELECT POINTS</Text>
@@ -151,20 +167,21 @@ export function WalletScreen() {
               </Pressable>
             ))}
             <Pressable style={[styles.amountChip, selectedAmount === 'all' && styles.amountChipSelected]} onPress={() => setSelectedAmount('all')}>
-              <Text style={styles.amountChipText}>All</Text>
-              <Text style={styles.amountChipSub}>{points}</Text>
+              <Text style={styles.amountChipText}>Max</Text>
+              <Text style={styles.amountChipSub}>{Math.min(points, MAX_REDEMPTION_POINTS_PER_REQUEST)}</Text>
             </Pressable>
           </View>
 
           <View style={{ marginTop: spacing.lg }}>
             <Button
-              label={!isValidUpi ? 'Enter UPI first' : 'Withdraw to UPI'}
+              label={!hasPayoutMethod ? 'Add UPI in Profile first' : submitting ? 'Submitting…' : 'Withdraw to UPI'}
               onPress={onSubmit}
               disabled={!canSubmit}
-              variant={!isValidUpi ? 'neutralDisabled' : 'primary'}
+              variant={!hasPayoutMethod ? 'neutralDisabled' : 'primary'}
               icon={null}
               roboto
             />
+            {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
           </View>
 
           <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>REDEMPTION HISTORY</Text>
@@ -177,15 +194,17 @@ export function WalletScreen() {
           ) : (
             <View style={styles.historyList}>
               {myRedemptions.map((r) => {
-                const meta = REDEMPTION_STATUS_META[r.status];
+                const meta = REDEMPTION_STATUS_META[r.status] ?? REDEMPTION_STATUS_META.pending;
                 return (
                   <View key={r.id} style={styles.historyRow}>
                     <View style={styles.historyIcon}>
                       <Ionicons name="cash-outline" size={16} color={colors.walletPointsAccent} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.historyAmount}>₹{r.amount.toLocaleString('en-IN')} pts</Text>
-                      <Text style={styles.historyMeta}>{maskUpi(r.upiId)} · {r.requestedAt}</Text>
+                      <Text style={styles.historyAmount}>₹{Number(r.amount).toLocaleString('en-IN')} pts</Text>
+                      <Text style={styles.historyMeta}>
+                        {r.upi_id ? maskUpi(r.upi_id) : 'Bank transfer'} · {new Date(r.requested_at).toLocaleDateString()}
+                      </Text>
                     </View>
                     <Pill label={meta.label} tone={meta.tone} icon={meta.icon} size="sm" />
                   </View>
@@ -206,9 +225,7 @@ export function WalletScreen() {
               </View>
             </UnlockReveal>
             <Text style={styles.resultTitle}>Withdrawal requested</Text>
-            <Text style={styles.resultSubtitle}>
-              {amount} pts will reach your UPI within {amount < AUTO_APPROVE_CEILING ? 'a few minutes' : '4 hours'}.
-            </Text>
+            <Text style={styles.resultSubtitle}>Your request is with our team and will reach your UPI soon.</Text>
             <Button label="Done" onPress={() => setSuccess(false)} roboto />
           </View>
         </View>
@@ -301,6 +318,7 @@ const styles = StyleSheet.create({
   },
   infoBannerEmoji: { fontSize: 14 },
   infoBannerText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.walletPointsAccent },
+  errorText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: colors.danger, marginTop: spacing.sm, textAlign: 'center' },
   fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.6, color: 'rgba(10,22,40,0.4)', marginTop: spacing.lg },
   upiField: {
     flexDirection: 'row',

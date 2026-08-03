@@ -1,49 +1,59 @@
-# GoMax App — Backend
+# GoMax App — Backend (V1)
 
-The app is wired to a real Supabase backend (project: `dealer-crm`,
-ref `phbvjhwimvzoaxjartzn`, region `ap-south-1`).
+Live Supabase project: `dealer-crm`, ref `phbvjhwimvzoaxjartzn`, region `ap-south-1`.
 
-## What's there
-- **Auth**: phone OTP (masons/dealers/salesmen) via `supabase.auth.signInWithOtp`
-  / `verifyOtp`. Admin uses email+password (`supabase.auth.signInWithPassword`),
-  gated on `profiles.role = 'admin'`.
-- **Schema**: `profiles`, `dealer_business_details`, `products`, `scan_activity`,
-  `orders` + `order_items`, `ledger_transactions`, `challenges` +
-  `challenge_progress`, `badges` + `user_badges`, `scratch_cards` +
-  `user_scratch_cards`, `redemption_requests`, `beat_plan`, `dcr_entries`,
-  `fraud_flags`, `referrals`. Full RLS on every table — everyone reads/writes
-  only their own rows; admins (role='admin') see everything.
-- **Code**: `src/lib/supabase.ts` (client), `src/lib/database.types.ts`
-  (generated types), `src/services/*.ts` (one file per domain), and
-  `src/hooks/useSupabaseData.ts` (fetch hooks screens use directly).
-  `src/state/AppContext.tsx` now backs its state with the real session +
-  profile row instead of local mock state.
+## V1 scope
+Four roles: **Dealer, Contractor, Applicator, Admin.**
+Referral hierarchy (enforced by a DB trigger, not just the UI):
+Dealer → Contractor or Applicator · Contractor → Applicator only ·
+Applicator → Applicator only. Only Dealer/Admin may sign up with no referrer.
 
-## Setup
-1. `.env` already has the project URL + anon key committed (anon key is
-   safe to expose — every table is RLS-protected). Copy `.env.example` if
-   you ever need to point at a different project.
-2. `npm install && npx expo start`.
+## Core mechanics
+- **Coupon scan** (`scan_coupon(code)`): row-locks the coupon, burns it, credits
+  the Applicator's Points, then cascades commission up to 4 referral levels —
+  each level gets 10% of the level directly below it (compounding, not flat).
+  All in one atomic Postgres function, immune to double-scan races.
+- **Points redemption** (`request_points_redemption(amount)`): ₹500 min,
+  ₹5,000 max per request, ₹15,000 max per calendar month — enforced
+  server-side, not just in the UI.
+- **Runs** are earned only from challenges, the spin wheel (8 segments,
+  3 spins/day — matches the pre-existing SpinWheelScreen design exactly),
+  and scratch cards. Spent only in the gift catalogue.
+- **Gift redemption** (`redeem_gift(gift_id)`): atomic stock + balance check.
+  Fulfilment lifecycle: pending → shipped → delivered, with an optional
+  proof URL, managed from Admin → Gifts.
+- **Admin** has full-access ledger search (`getUserLedgerByMobile`) — every
+  scan, commission entry, points/runs ledger line, redemption, and gift
+  claim for any one person, for dispute resolution.
 
-## Known gaps / next steps
-- **SMS delivery**: phone OTP calls Supabase's Auth API, but no SMS
-  provider (Twilio, MSG91, etc.) is configured yet in Supabase Auth
-  settings, so OTPs won't actually arrive on a real phone until one is
-  wired up in the Supabase dashboard (Authentication → Providers → Phone).
-  Until then, use Supabase's test phone numbers for dev.
-- **First admin account**: create one via `supabase.auth.signUp` (or the
-  Supabase dashboard → Authentication → Add user) with an email+password,
-  then run:
+## Auth
+Mobile number + self-chosen password (via a synthetic-email trick so it
+rides on real Supabase Auth/RLS without needing phone OTP confirmation).
+Signup (`complete_signup(...)`) takes role, name, mobile, city, address,
+bank/UPI, a security question from a **fixed 5-question list**, and a
+referral code — validated and role-gated in one atomic call.
+
+Forgot password requires **both** a valid OTP and the correct security
+answer (`request_password_reset_otp` + `reset_password_with_otp`).
+
+## Known gaps
+- **No SMS provider configured yet.** `request_password_reset_otp` returns
+  the code directly in `dev_otp` so the flow is testable end-to-end. Remove
+  that field from the RPC response once Twilio/MSG91 is wired up in
+  Supabase Auth settings.
+- **No admin account exists yet.** Sign up once via email+password in the
+  Supabase dashboard (Authentication → Add user), then:
   ```sql
-  update public.profiles set role = 'admin' where id = '<the new user's uuid>';
+  update public.profiles set role = 'admin' where id = '<the new user''s uuid>';
   ```
-- **Salesman monthly target**: not modeled in the schema yet (hardcoded to
-  ₹250,000 client-side in `SalesmanHomeScreen`/`ProfileScreen`) — add a
-  `monthly_target` column to `profiles` (or a separate `targets` table) if
-  this needs to be real per-salesman data.
-- **Dealer credit fields on beat_plan**: `beat_plan` rows don't carry
-  outstanding/credit-limit — that lives on `dealer_business_details` and
-  only resolves if `beat_plan.dealer_id` is linked to a real dealer profile.
-- **Shop photo upload**: `dealer_business_details.shop_photo_url` is set to
-  the placeholder string `'pending-upload'` when a dealer marks "has shop
-  photo" — actual image upload to Supabase Storage isn't wired up.
+- **Coupon batch upload has no UI yet.** Coupons need to be inserted into
+  the `coupons` table (code + points_value) some other way for now —
+  e.g. directly via SQL or a CSV import script — before applicators can
+  scan anything real.
+- This is a hard cut from the previous version — the old Dealer(shop)/
+  Salesman ordering, ledger, and beat-plan features are fully removed
+  (not just hidden) since they're out of scope for this phase; the old
+  `dealer_business_details`, `orders`, `order_items`, `ledger_transactions`,
+  `beat_plan`, `dcr_entries`, `redemption_requests`, `referrals`,
+  `fraud_flags`, `products`, `scan_activity` tables still exist in Supabase
+  (harmless, unused) in case a future version wants to revive that flow.

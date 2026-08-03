@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -10,27 +10,29 @@ import { useApp } from '../../state/AppContext';
 import { photos } from '../../assets/images';
 import { OnboardingStackParamList } from '../../navigation/types';
 
-type Props = NativeStackScreenProps<OnboardingStackParamList, 'MobileNumber'>;
+type Props = NativeStackScreenProps<OnboardingStackParamList, 'Login'>;
 
-// Node 1:101 — header gradient: linear-gradient(159.8deg, #000000 1.89%, #041F61 74.93%)
-export function MobileNumberScreen({ navigation }: Props) {
-  const { sendOtp } = useApp();
-  const [phone, setPhone] = useState('');
-  const [sending, setSending] = useState(false);
+// Same header/card template as the old MobileNumberScreen (node 1:101) —
+// gradient photo header + white rounded card underneath.
+export function LoginScreen({ navigation }: Props) {
+  const { logIn } = useApp();
+  const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState('');
 
-  const canSubmit = phone.length === 10 && !sending;
+  const canSubmit = mobile.length === 10 && password.length > 0 && !signingIn;
 
   const onSubmit = async () => {
-    setSending(true);
+    setSigningIn(true);
     setError('');
     try {
-      await sendOtp(phone);
-      navigation.navigate('Otp');
+      await logIn(mobile, password);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not send OTP. Try again.');
+      setError(e instanceof Error ? e.message : 'Could not sign in. Try again.');
     } finally {
-      setSending(false);
+      setSigningIn(false);
     }
   };
 
@@ -44,7 +46,6 @@ export function MobileNumberScreen({ navigation }: Props) {
         locations={[0.019, 0.75]}
         style={styles.header}
       >
-        {/* PLACEHOLDER: photos.onboardingMobileNumber — see assets/README.md */}
         {photos.onboardingMobileNumber ? (
           <Image source={photos.onboardingMobileNumber} style={StyleSheet.absoluteFill} resizeMode="cover" />
         ) : null}
@@ -52,28 +53,44 @@ export function MobileNumberScreen({ navigation }: Props) {
 
       <View style={styles.card}>
         <Text style={styles.heading}>GoMax mein</Text>
-        <Text style={styles.headingAccent}>Swagat Hai! 👋</Text>
+        <Text style={styles.headingAccent}>Wapas Aaiye! 👋</Text>
 
-        <View style={{ marginTop: 32 }}>
+        <View style={{ marginTop: 32, gap: spacing.lg }}>
           <TextField
             label="MOBILE NUMBER"
             prefix="🇮🇳 +91"
             placeholder="XXXXX-XXXXX"
             keyboardType="number-pad"
             maxLength={10}
-            value={phone}
-            onChangeText={(t) => setPhone(t.replace(/[^0-9]/g, ''))}
+            value={mobile}
+            onChangeText={(t) => setMobile(t.replace(/[^0-9]/g, ''))}
+          />
+          <TextField
+            label="PASSWORD"
+            placeholder="Enter your password"
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+            rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onRightIconPress={() => setShowPassword((v) => !v)}
+            rightIconAccessibilityLabel="Toggle password visibility"
           />
         </View>
 
+        <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={8}>
+          <Text style={styles.forgotLink}>Password bhool gaye?</Text>
+        </Pressable>
+
         <View style={styles.spacer} />
 
-        <Button label={sending ? 'Sending…' : 'OTP Bhejo'} onPress={onSubmit} disabled={!canSubmit} roboto />
+        <Button label={signingIn ? 'Signing in…' : 'Login'} onPress={onSubmit} disabled={!canSubmit} roboto />
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <Text style={styles.terms}>
-          Join karke aap <Text style={styles.termsLink}>Terms & Conditions</Text> se agree karte hain
-        </Text>
+        <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={8}>
+          <Text style={styles.terms}>
+            Naya account? <Text style={styles.termsLink}>Sign up karein</Text>
+          </Text>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -81,7 +98,7 @@ export function MobileNumberScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.black },
-  header: { height: 360, overflow: 'hidden' },
+  header: { height: 260, overflow: 'hidden' },
   card: {
     flex: 1,
     marginTop: -radius.xl,
@@ -93,6 +110,7 @@ const styles = StyleSheet.create({
   },
   heading: { ...m3Type.headlineLarge, color: colors.primary700 },
   headingAccent: { ...m3Type.headlineLarge, color: colors.black },
+  forgotLink: { ...m3Type.labelMedium, color: colors.primary700, textAlign: 'right', marginTop: spacing.md },
   spacer: { flex: 1 },
   errorText: { ...m3Type.labelMedium, color: colors.danger, textAlign: 'center', marginTop: spacing.sm },
   terms: { ...m3Type.labelSmall, color: colors.black, textAlign: 'center', marginTop: spacing.lg, marginBottom: spacing.xl },

@@ -13,7 +13,7 @@ export function SplashScreen({ navigation }: Props) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    timerRef.current = setTimeout(() => navigation.replace('MobileNumber'), 1800);
+    timerRef.current = setTimeout(() => navigation.replace('Login'), 1800);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
