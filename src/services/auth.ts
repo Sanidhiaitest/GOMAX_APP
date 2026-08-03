@@ -8,7 +8,11 @@ import { supabase } from '../lib/supabase';
  */
 function syntheticEmail(mobileNumber: string) {
   const digits = mobileNumber.replace(/[^0-9]/g, '');
-  return `m${digits}@gomax.internal`;
+  // NOTE: .internal is an RFC-2606-adjacent reserved TLD that Supabase's
+  // GoTrue email validator rejects outright ("email_address_invalid") —
+  // learned the hard way. Any ordinary-looking domain works instead; this
+  // address is never actually emailed since Auth confirmation is off.
+  return `m${digits}@gomaxusers.app`;
 }
 
 export type SignupRole = 'dealer' | 'contractor' | 'applicator';
