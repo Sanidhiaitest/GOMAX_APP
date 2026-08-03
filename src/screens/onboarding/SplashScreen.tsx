@@ -4,23 +4,39 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, m3Type, spacing } from '../../theme';
 import { GoMaxLogo } from '../../components/GoMaxLogo';
+import { useApp } from '../../state/AppContext';
 import { OnboardingStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Splash'>;
 
+const MIN_SPLASH_MS = 1200;
+
 // Exact gradient from Figma node 1:98: linear-gradient(159.8deg, #000000 1.89%, #002040 74.93%)
 export function SplashScreen({ navigation }: Props) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { isAuthenticated, sessionLoading } = useApp();
+  const [minTimeElapsed, setMinTimeElapsed] = React.useState(false);
+  const routedRef = useRef(false);
 
   useEffect(() => {
-    timerRef.current = setTimeout(() => navigation.replace('Login'), 1800);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [navigation]);
+    const timer = setTimeout(() => setMinTimeElapsed(true), MIN_SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    // AppContext already restores a saved Supabase session on launch — a
+    // returning user with a valid session goes straight into the app
+    // instead of being shown the Login screen every time they open it.
+    if (!minTimeElapsed || sessionLoading || routedRef.current) return;
+    routedRef.current = true;
+    if (isAuthenticated) {
+      navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Main' }] });
+    } else {
+      navigation.replace('Login');
+    }
+  }, [navigation, isAuthenticated, sessionLoading, minTimeElapsed]);
 
   const goToAdminLogin = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    routedRef.current = true;
     navigation.getParent()?.navigate('AdminLogin');
   };
 

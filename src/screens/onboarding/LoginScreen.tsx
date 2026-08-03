@@ -31,6 +31,9 @@ export function LoginScreen({ navigation }: Props) {
     setError('');
     try {
       await logIn(mobile, password);
+      // Auth succeeds against Supabase fine on its own — nothing else moves
+      // the screen forward without this explicit reset into the Main stack.
+      navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not sign in. Try again.');
     } finally {
