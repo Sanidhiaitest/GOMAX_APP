@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, spacing } from '../../theme';
 import { Button } from '../../components/Button';
@@ -21,7 +21,13 @@ export function AdminRedemptionsScreen() {
   const resolved = redemptions.filter((r) => r.status !== 'pending');
 
   const onDecide = async (id: string, decision: 'approved' | 'rejected') => {
-    await decideRedemption(id, decision);
+    const { tds } = await decideRedemption(id, decision);
+    if (tds?.tds_applicable) {
+      Alert.alert(
+        'Tax deducted (Govt. rule)',
+        `This person crossed ₹20,000 in payouts this financial year, so ${tds.tds_rate === 0.1 ? '10%' : '20%'} tax (₹${tds.tds_amount?.toLocaleString('en-IN')}) applies under Section 194R.${tds.pan_on_file ? '' : ' No PAN on file — rate is 20% instead of 10%. Ask them to add their PAN to save them money next time.'}`
+      );
+    }
     await reload();
   };
 

@@ -48,7 +48,18 @@ export async function listPendingRedemptions(): Promise<RedemptionRequestRow[]> 
 }
 
 /** Approves/rejects/marks-paid a Points redemption. Rejections refund the points that were deducted up front. */
-export async function decideRedemption(id: string, decision: 'approved' | 'rejected' | 'paid'): Promise<RedemptionRequestRow> {
+export type TdsCheckResult = {
+  tds_applicable: boolean;
+  cumulative_fy_value: number;
+  tds_rate: number | null;
+  tds_amount: number | null;
+  pan_on_file: boolean;
+};
+
+export async function decideRedemption(
+  id: string,
+  decision: 'approved' | 'rejected' | 'paid'
+): Promise<{ request: RedemptionRequestRow; tds: TdsCheckResult | null }> {
   const { data: auth } = await supabase.auth.getUser();
   const { data: existing, error: getErr } = await supabase
     .from('points_redemption_requests')
@@ -76,7 +87,20 @@ export async function decideRedemption(id: string, decision: 'approved' | 'rejec
       ref_id: existing.id,
     });
   }
-  return data;
+
+  let tds: TdsCheckResult | null = null;
+  if (decision === 'approved' || decision === 'paid') {
+    const { data: tdsData, error: tdsError } = await supabase.rpc('check_and_record_tds', {
+      p_user_id: existing.user_id,
+      p_benefit_type: 'points_redemption',
+      p_ref_table: 'points_redemption_requests',
+      p_ref_id: id,
+      p_benefit_value: Number(existing.amount),
+    });
+    if (!tdsError) tds = tdsData as TdsCheckResult;
+  }
+
+  return { request: data, tds };
 }
 
 export async function listGiftRedemptions(status?: 'pending' | 'shipped' | 'delivered'): Promise<
@@ -89,12 +113,12 @@ export async function listGiftRedemptions(status?: 'pending' | 'shipped' | 'deli
   return (data ?? []).map((row: any) => ({ ...row, gift: row.gift_catalogue ?? null, user: row.profiles ?? null }));
 }
 
-/** Updates a gift claim's fulfillment status (pending → shipped → delivered), optionally attaching proof. */
+/** Updates a gift claim's fulfillment status (pending → shipped → delivered), optionally attaching proof. Runs the TDS check on delivery, if the gift has a market value set. */
 export async function updateGiftRedemptionStatus(
   id: string,
   status: 'shipped' | 'delivered',
   proofUrl?: string
-): Promise<GiftRedemptionRow> {
+): Promise<{ redemption: GiftRedemptionRow; tds: TdsCheckResult | null }> {
   const { data: auth } = await supabase.auth.getUser();
   const patch: TablesUpdate<'gift_redemptions'> = {
     status,
@@ -105,9 +129,56 @@ export async function updateGiftRedemptionStatus(
   if (status === 'shipped') patch.shipped_at = new Date().toISOString();
   if (status === 'delivered') patch.delivered_at = new Date().toISOString();
 
-  const { data, error } = await supabase.from('gift_redemptions').update(patch).eq('id', id).select('*').single();
+  const { data, error } = await supabase
+    .from('gift_redemptions')
+    .update(patch)
+    .eq('id', id)
+    .select('*, gift_catalogue(market_value_inr)')
+    .single();
   if (error) throw error;
-  return data;
+
+  let tds: TdsCheckResult | null = null;
+  const marketValue = (data as any).gift_catalogue?.market_value_inr;
+  if (status === 'delivered' && marketValue) {
+    const { data: tdsData, error: tdsError } = await supabase.rpc('check_and_record_tds', {
+      p_user_id: data.user_id,
+      p_benefit_type: 'gift_redemption',
+      p_ref_table: 'gift_redemptions',
+      p_ref_id: id,
+      p_benefit_value: Number(marketValue),
+    });
+    if (!tdsError) tds = tdsData as TdsCheckResult;
+  }
+
+  const { gift_catalogue, ...redemption } = data as any;
+  return { redemption, tds };
+}
+
+export type TdsSummaryEntry = {
+  userId: string;
+  fullName: string;
+  mobileNumber: string;
+  panNumber: string | null;
+  financialYear: string;
+  cumulativeFyValue: number;
+  tdsApplicable: boolean;
+  latestTdsAmount: number | null;
+};
+
+/** Every user's cumulative-this-financial-year benefit value and TDS status, for Admin's compliance overview. */
+export async function getTdsSummary(financialYear?: string): Promise<TdsSummaryEntry[]> {
+  const { data, error } = await supabase.rpc('get_tds_summary', { p_financial_year: financialYear });
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    userId: row.user_id,
+    fullName: row.full_name || 'GoMax User',
+    mobileNumber: row.mobile_number,
+    panNumber: row.pan_number,
+    financialYear: row.financial_year,
+    cumulativeFyValue: Number(row.cumulative_fy_value),
+    tdsApplicable: row.tds_applicable,
+    latestTdsAmount: row.latest_tds_amount != null ? Number(row.latest_tds_amount) : null,
+  }));
 }
 
 export type UserLedgerSummary = {

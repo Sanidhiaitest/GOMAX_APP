@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
 import { Button } from '../../components/Button';
@@ -26,7 +26,13 @@ export function AdminGiftsScreen() {
   const advance = async (id: string, nextStatus: 'shipped' | 'delivered', withProof?: string) => {
     setSaving(true);
     try {
-      await updateGiftRedemptionStatus(id, nextStatus, withProof);
+      const { tds } = await updateGiftRedemptionStatus(id, nextStatus, withProof);
+      if (tds?.tds_applicable) {
+        Alert.alert(
+          'Tax deducted (Govt. rule)',
+          `This person crossed ₹20,000 in benefits this financial year, so ${tds.tds_rate === 0.1 ? '10%' : '20%'} tax (₹${tds.tds_amount?.toLocaleString('en-IN')}) applies under Section 194R.${tds.pan_on_file ? '' : ' No PAN on file — rate is 20% instead of 10%.'}`
+        );
+      }
       await reload();
       setProofModalFor(null);
       setProofUrl('');
