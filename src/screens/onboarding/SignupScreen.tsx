@@ -125,6 +125,9 @@ export function SignupScreen({ navigation }: Props) {
         securityAnswer,
         referralCode: noReferral ? '' : referralCode.trim(),
       });
+      // Same fix as LoginScreen — signUp() succeeds against Supabase fine on
+      // its own, but nothing moves the screen forward without this.
+      navigation.getParent()?.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Signup failed. Please check your details and try again.');
     } finally {
