@@ -80,6 +80,37 @@ export async function listMyRunsLedger(): Promise<RunsLedgerRow[]> {
   return data ?? [];
 }
 
+export type MyTier = {
+  lifetimePoints: number;
+  tierName: string;
+  perkDescription: string | null;
+  nextTierName: string | null;
+  nextTierThreshold: number | null;
+  pointsToNextTier: number | null;
+};
+
+/** Real tier based on lifetime Points earned (not current balance — redeeming doesn't demote you). */
+export async function getMyTier(): Promise<MyTier> {
+  const { data, error } = await supabase.rpc('get_my_tier');
+  if (error) throw error;
+  const payload = data as {
+    lifetime_points: number;
+    tier_name: string;
+    perk_description: string | null;
+    next_tier_name: string | null;
+    next_tier_threshold: number | null;
+    points_to_next_tier: number | null;
+  };
+  return {
+    lifetimePoints: Number(payload.lifetime_points),
+    tierName: payload.tier_name,
+    perkDescription: payload.perk_description,
+    nextTierName: payload.next_tier_name,
+    nextTierThreshold: payload.next_tier_threshold != null ? Number(payload.next_tier_threshold) : null,
+    pointsToNextTier: payload.points_to_next_tier != null ? Number(payload.points_to_next_tier) : null,
+  };
+}
+
 /** How much has already been redeemed this calendar month (against the ₹15,000 cap). */
 export async function getRedeemedThisMonth(): Promise<number> {
   const { data: auth } = await supabase.auth.getUser();

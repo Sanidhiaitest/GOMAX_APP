@@ -108,6 +108,32 @@ export function AdminDashboardScreen() {
               <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />
             </Card>
           </Pressable>
+
+          <Pressable onPress={() => navigation.getParent()?.navigate('AdminGiftCatalogue')}>
+            <Card style={styles.attentionRow}>
+              <View style={[styles.attentionIcon, { backgroundColor: colors.orange50 }]}>
+                <Ionicons name="pricetags-outline" size={20} color={colors.primary700} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attentionTitle}>Manage Gift Catalogue</Text>
+                <Text style={styles.attentionSubtitle}>Add, edit or hide gifts</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />
+            </Card>
+          </Pressable>
+
+          <Pressable onPress={() => navigation.getParent()?.navigate('AdminChallengesManage')}>
+            <Card style={styles.attentionRow}>
+              <View style={[styles.attentionIcon, { backgroundColor: colors.secondary50 }]}>
+                <Ionicons name="trophy-outline" size={20} color={colors.secondary500} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attentionTitle}>Manage Challenges</Text>
+                <Text style={styles.attentionSubtitle}>Add, edit or hide challenges</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.neutral400} />
+            </Card>
+          </Pressable>
         </View>
       </ScrollView>
     </Screen>

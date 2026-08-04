@@ -74,3 +74,49 @@ answer (`request_password_reset_otp` + `reset_password_with_otp`).
   user in the system with their direct upline resolved, for hierarchy
   visibility. A visual org-chart/tree view is not built — flat list only,
   per the "start simple" decision.
+
+## TDS / KYC compliance (Section 194R / recodified 393(1))
+- ₹20,000/FY aggregate threshold per recipient, 10% TDS (20% without PAN),
+  triggered when a redemption is approved or a gift is marked delivered.
+- Role-tiered PAN/Aadhaar collection at signup: Dealer/Contractor get a more
+  direct ask (they hit the threshold fast and are business-registered
+  players who likely already have PAN); Applicators get a fully optional,
+  plain-language nudge + a pointer to the free Aadhaar-based Instant e-PAN
+  government service (~5-10 min, no paperwork) — never blocks anything.
+- `tds_records` keeps a full audit trail per user per financial year.
+  `get_tds_summary()` gives Admin an overview; individual events surface a
+  plain-language alert to Admin ("Govt. rule... 10%/20% tax applies...").
+- **This is a calculator + flagging system, not an automated filer.** It
+  does not deduct money from a payout, deposit TDS, or file any return —
+  verify the actual compliance process with a CA before relying on it.
+- `gift_catalogue.market_value_inr` needs to be set per gift for TDS to be
+  calculated on gift claims (defaults to skipped if null) — set this when
+  building gift CRUD.
+
+## Admin CRUD (gifts & challenges)
+- Admin → Dashboard → "Manage Gift Catalogue" / "Manage Challenges" — create,
+  edit, and hide (soft-delete via `active` toggle) both, from the app.
+  No more direct-SQL seeding needed for day-to-day operation.
+- Gift `market_value_inr` is settable here — required for TDS to calculate
+  on gift claims (skipped if left blank).
+
+## Business volume (My Team)
+- `get_my_downline()` now also returns `business_volume`: the total ₹ value
+  of coupons scanned by that person AND everyone in their own sub-team below
+  them — not just the commission the viewer personally earned from them.
+  This is the number to use for volume-based schemes/annual bonuses.
+- The Team screen's top-line "Team business done" figure sums only direct
+  reports' business_volume (each one's figure already rolls up everyone
+  below them — summing all rows would double-count).
+
+## Tier system (Bronze/Silver/Gold/Platinum)
+- Real, not decorative — based on **lifetime Points earned** (scan +
+  commission credits), not current balance, so redeeming Points never
+  demotes someone.
+- `tier_bands` table (Admin-editable via SQL for now — no dedicated editor
+  screen yet): Bronze (0), Silver (2,000), Gold (5,000), Platinum (10,000
+  lifetime points). Each band has a `perk_description` field, currently just
+  descriptive text — no automated perk enforcement (e.g. no gift-catalogue
+  gating by tier yet).
+- `get_my_tier()` returns current tier, perks, and progress to next tier.
+  Shown on Profile with a progress bar.

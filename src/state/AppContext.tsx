@@ -17,6 +17,8 @@ type AppState = {
   bankAccountNumber: string;
   bankIfsc: string;
   upiId: string;
+  panNumber: string;
+  aadhaarNumber: string;
   points: number;
   runs: number;
   referralCode: string;
@@ -43,6 +45,8 @@ const initialState: AppState = {
   bankAccountNumber: '',
   bankIfsc: '',
   upiId: '',
+  panNumber: '',
+  aadhaarNumber: '',
   points: 0,
   runs: 0,
   referralCode: '',
@@ -72,6 +76,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       bankAccountNumber: profile.bank_account_number ?? '',
       bankIfsc: profile.bank_ifsc ?? '',
       upiId: profile.upi_id ?? '',
+      panNumber: profile.pan_number ?? '',
+      aadhaarNumber: profile.aadhaar_number ?? '',
       points: profile.points,
       runs: profile.runs,
       referralCode: profile.referral_code ?? '',

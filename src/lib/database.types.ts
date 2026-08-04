@@ -163,6 +163,7 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          market_value_inr: number | null
           name: string
           runs_cost: number
           stock: number
@@ -173,6 +174,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          market_value_inr?: number | null
           name: string
           runs_cost: number
           stock?: number
@@ -183,6 +185,7 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          market_value_inr?: number | null
           name?: string
           runs_cost?: number
           stock?: number
@@ -335,6 +338,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aadhaar_number: string | null
           address: string | null
           bank_account_number: string | null
           bank_ifsc: string | null
@@ -348,6 +352,7 @@ export type Database = {
           loyalty_tier: string
           mobile_number: string | null
           onboarding_complete: boolean
+          pan_number: string | null
           points: number
           referral_code: string | null
           referrer_id: string | null
@@ -358,6 +363,7 @@ export type Database = {
           upi_id: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
           address?: string | null
           bank_account_number?: string | null
           bank_ifsc?: string | null
@@ -371,6 +377,7 @@ export type Database = {
           loyalty_tier?: string
           mobile_number?: string | null
           onboarding_complete?: boolean
+          pan_number?: string | null
           points?: number
           referral_code?: string | null
           referrer_id?: string | null
@@ -381,6 +388,7 @@ export type Database = {
           upi_id?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
           address?: string | null
           bank_account_number?: string | null
           bank_ifsc?: string | null
@@ -394,6 +402,7 @@ export type Database = {
           loyalty_tier?: string
           mobile_number?: string | null
           onboarding_complete?: boolean
+          pan_number?: string | null
           points?: number
           referral_code?: string | null
           referrer_id?: string | null
@@ -486,6 +495,54 @@ export type Database = {
         }
         Relationships: []
       }
+      tds_records: {
+        Row: {
+          benefit_type: string
+          benefit_value: number
+          created_at: string
+          cumulative_fy_value: number
+          financial_year: string
+          id: string
+          pan_on_file: boolean
+          ref_id: string
+          ref_table: string
+          tds_amount: number | null
+          tds_applicable: boolean
+          tds_rate: number | null
+          user_id: string
+        }
+        Insert: {
+          benefit_type: string
+          benefit_value: number
+          created_at?: string
+          cumulative_fy_value: number
+          financial_year: string
+          id?: string
+          pan_on_file?: boolean
+          ref_id: string
+          ref_table: string
+          tds_amount?: number | null
+          tds_applicable?: boolean
+          tds_rate?: number | null
+          user_id: string
+        }
+        Update: {
+          benefit_type?: string
+          benefit_value?: number
+          created_at?: string
+          cumulative_fy_value?: number
+          financial_year?: string
+          id?: string
+          pan_on_file?: boolean
+          ref_id?: string
+          ref_table?: string
+          tds_amount?: number | null
+          tds_applicable?: boolean
+          tds_rate?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       spin_wheel_prizes: {
         Row: {
           active: boolean
@@ -555,6 +612,30 @@ export type Database = {
         }
         Relationships: []
       }
+      tier_bands: {
+        Row: {
+          id: string
+          min_lifetime_points: number
+          name: string
+          perk_description: string | null
+          sort_order: number
+        }
+        Insert: {
+          id?: string
+          min_lifetime_points: number
+          name: string
+          perk_description?: string | null
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          min_lifetime_points?: number
+          name?: string
+          perk_description?: string | null
+          sort_order?: number
+        }
+        Relationships: []
+      }
       user_scratch_cards: {
         Row: {
           card_id: string
@@ -604,17 +685,31 @@ export type Database = {
           full_name: string
           role: string
           created_at: string
+          referrer_id: string | null
           commission_generated: number
+          business_volume: number
         }[]
+      }
+      check_and_record_tds: {
+        Args: {
+          p_benefit_type: string
+          p_benefit_value: number
+          p_ref_id: string
+          p_ref_table: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       complete_signup: {
         Args: {
+          p_aadhaar_number?: string
           p_address: string
           p_bank_account_number: string
           p_bank_ifsc: string
           p_city: string
           p_full_name: string
           p_mobile_number: string
+          p_pan_number?: string
           p_referral_code: string
           p_role: string
           p_security_answer: string
@@ -623,7 +718,31 @@ export type Database = {
         }
         Returns: Json
       }
+      get_tds_summary: {
+        Args: { p_financial_year?: string }
+        Returns: {
+          cumulative_fy_value: number
+          financial_year: string
+          full_name: string
+          latest_tds_amount: number | null
+          mobile_number: string
+          pan_number: string | null
+          tds_applicable: boolean
+          user_id: string
+        }[]
+      }
       current_role_is: { Args: { target: string }; Returns: boolean }
+      get_my_tier: { Args: never; Returns: Json }
+      list_tier_bands: {
+        Args: never
+        Returns: {
+          id: string
+          min_lifetime_points: number
+          name: string
+          perk_description: string | null
+          sort_order: number
+        }[]
+      }
       get_referrer_role_by_code: {
         Args: { p_referral_code: string }
         Returns: Json

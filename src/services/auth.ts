@@ -40,6 +40,8 @@ export type SignupInput = {
   securityQuestion: SecurityQuestion;
   securityAnswer: string;
   referralCode: string;
+  panNumber?: string;
+  aadhaarNumber?: string;
 };
 
 /** Creates the auth user, then fills in the full profile via complete_signup(). */
@@ -73,6 +75,8 @@ export async function signUp(input: SignupInput) {
     p_security_question: input.securityQuestion,
     p_security_answer: input.securityAnswer,
     p_referral_code: input.referralCode,
+    p_pan_number: input.panNumber,
+    p_aadhaar_number: input.aadhaarNumber,
   });
   if (rpcError) throw rpcError;
   const payload = result as { success: boolean; error?: string; referral_code?: string };

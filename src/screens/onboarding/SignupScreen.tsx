@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, m3Type, radius, spacing } from '../../theme';
@@ -48,6 +48,8 @@ export function SignupScreen({ navigation }: Props) {
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankIfsc, setBankIfsc] = useState('');
   const [upiId, setUpiId] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [securityQuestion, setSecurityQuestion] = useState<string>('');
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [questionModal, setQuestionModal] = useState(false);
@@ -124,6 +126,8 @@ export function SignupScreen({ navigation }: Props) {
         securityQuestion: securityQuestion as (typeof SECURITY_QUESTIONS)[number],
         securityAnswer,
         referralCode: noReferral ? '' : referralCode.trim(),
+        panNumber: panNumber.trim() || undefined,
+        aadhaarNumber: aadhaarNumber.trim() || undefined,
       });
       // Same fix as LoginScreen — signUp() succeeds against Supabase fine on
       // its own, but nothing moves the screen forward without this.
@@ -245,6 +249,32 @@ export function SignupScreen({ navigation }: Props) {
             </View>
           </Section>
 
+          <Section title="TAX DETAILS">
+            {role === 'applicator' ? (
+              <>
+                <Text style={styles.hintText}>
+                  PAN card dene se tax kam katega (10%, PAN ke bina 20%) jab aapki kamai ₹20,000/saal se zyada ho jaaye.
+                  PAN nahi hai? Aadhaar se 5 minute mein <Text style={styles.linkText} onPress={() => Linking.openURL('https://www.incometax.gov.in/iec/foportal')}>free mein bana sakte hain</Text>.
+                </Text>
+                <View style={{ gap: spacing.lg, marginTop: spacing.md }}>
+                  <TextField label="PAN NUMBER (OPTIONAL)" placeholder="ABCDE1234F" autoCapitalize="characters" value={panNumber} onChangeText={setPanNumber} />
+                  <TextField label="AADHAAR NUMBER (OPTIONAL)" placeholder="XXXX XXXX XXXX" keyboardType="number-pad" value={aadhaarNumber} onChangeText={setAadhaarNumber} />
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.hintText}>
+                  As a {role === 'dealer' ? 'Dealer' : 'Contractor'}, your earnings are likely to cross the ₹20,000/year tax-free
+                  limit quickly — please add your PAN so 10% (not 20%) tax applies once that happens.
+                </Text>
+                <View style={{ gap: spacing.lg, marginTop: spacing.md }}>
+                  <TextField label="PAN NUMBER" placeholder="ABCDE1234F" autoCapitalize="characters" value={panNumber} onChangeText={setPanNumber} />
+                  <TextField label="AADHAAR NUMBER (OPTIONAL)" placeholder="XXXX XXXX XXXX" keyboardType="number-pad" value={aadhaarNumber} onChangeText={setAadhaarNumber} />
+                </View>
+              </>
+            )}
+          </Section>
+
           <Section title="SECURITY QUESTION">
             <Text style={styles.hintText}>Used to reset your password if you forget it.</Text>
             <View style={{ marginTop: spacing.md, gap: spacing.lg }}>
@@ -310,6 +340,7 @@ const styles = StyleSheet.create({
   verifyButtonDisabled: { opacity: 0.4 },
   verifyButtonText: { ...m3Type.labelLarge, color: colors.white, fontWeight: '600' },
   hintText: { ...m3Type.labelMedium, color: colors.neutral500 },
+  linkText: { color: colors.primary700, fontWeight: '600' },
   errorText: { ...m3Type.labelMedium, color: colors.danger, marginTop: spacing.xs },
   roleCard: {
     flexDirection: 'row',

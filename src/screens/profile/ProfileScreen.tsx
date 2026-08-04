@@ -1,16 +1,19 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Rect } from 'react-native-svg';
-import { colors, radius, spacing, typography } from '../../theme';
+import { colors, m3Type, radius, spacing, typography } from '../../theme';
 import { Card } from '../../components/Card';
 import { Pill } from '../../components/Pill';
 import { Screen } from '../../components/Screen';
+import { Button } from '../../components/Button';
 import { GoMaxLogo } from '../../components/GoMaxLogo';
 import { useApp } from '../../state/AppContext';
+import { updateMyProfile } from '../../services/profile';
+import { getMyTier, MyTier } from '../../services/wallet';
 import { RootStackParamList } from '../../navigation/types';
 import { softHaptic } from '../../utils/haptics';
 
@@ -20,21 +23,6 @@ const ROLE_LABEL: Record<string, string> = {
   applicator: 'Applicator',
   admin: 'Admin',
 };
-
-// Points-based tier bands — purely a visual "progress" ring, doesn't change
-// anything, just gives the hero card something graphic to show.
-const TIER_BANDS = [
-  { name: 'Bronze', min: 0, max: 500 },
-  { name: 'Silver', min: 500, max: 1500 },
-  { name: 'Gold', min: 1500, max: 3000 },
-  { name: 'Platinum', min: 3000, max: 3000 },
-];
-
-function tierRingPct(points: number) {
-  const band = TIER_BANDS.find((b) => points < b.max) ?? TIER_BANDS[TIER_BANDS.length - 1];
-  if (band.max === band.min) return 100;
-  return Math.min(100, Math.round(((points - band.min) / (band.max - band.min)) * 100));
-}
 
 // A deterministic-looking (seeded, not random) block pattern standing in for
 // a scannable QR code — decorative only.
@@ -80,7 +68,26 @@ function RingStat({ pct, icon, label }: { pct: number; icon: keyof typeof Ionico
 
 export function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { fullName, mobileNumber, role, city, address, upiId, bankAccountNumber, points, referralCode, logOut } = useApp();
+  const { fullName, mobileNumber, role, city, address, upiId, bankAccountNumber, points, referralCode, panNumber, refreshProfile, logOut } = useApp();
+  const [panModalOpen, setPanModalOpen] = useState(false);
+  const [panInput, setPanInput] = useState('');
+  const [savingPan, setSavingPan] = useState(false);
+  const [tier, setTier] = useState<MyTier | null>(null);
+
+  useEffect(() => {
+    getMyTier().then(setTier);
+  }, []);
+
+  const onSavePan = async () => {
+    setSavingPan(true);
+    try {
+      await updateMyProfile({ pan_number: panInput.trim() || null });
+      await refreshProfile();
+      setPanModalOpen(false);
+    } finally {
+      setSavingPan(false);
+    }
+  };
 
   // logOut() only resets AppContext state — it never moves the navigator.
   // Without an explicit reset here, "Main" stays mounted, leaving a
@@ -92,7 +99,8 @@ export function ProfileScreen() {
 
   const memberId = `GMX${mobileNumber ? mobileNumber.slice(-6) : '000000'}`;
   const pattern = idPattern(memberId + fullName);
-  const ring = { pct: tierRingPct(points), icon: 'star' as const, label: `${points} pts` };
+  const tierPct = tier?.nextTierThreshold ? Math.min(100, Math.round((tier.lifetimePoints / tier.nextTierThreshold) * 100)) : 100;
+  const ring = { pct: tier ? tierPct : 0, icon: 'star' as const, label: tier?.tierName ?? '…' };
 
   const idCardFields = [
     { label: 'Referral Code', value: referralCode || '—' },
@@ -109,13 +117,22 @@ export function ProfileScreen() {
     { icon: 'trophy-outline', label: 'Challenges', onPress: () => navigation.navigate('Challenges') },
   ];
 
-  type Row = { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; pillTone?: 'neutral' | 'warning' | 'success' };
+  type Row = { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; pillTone?: 'neutral' | 'warning' | 'success'; onPress?: () => void };
 
   const rows: Row[] = [
     { icon: 'call-outline', label: 'Mobile number', value: mobileNumber ? `+91 ${mobileNumber}` : '—' },
     { icon: 'location-outline', label: 'Address', value: address || '—' },
     { icon: 'card-outline', label: 'UPI ID', value: upiId || '—' },
     { icon: 'business-outline', label: 'Bank account', value: bankAccountNumber ? `••••${bankAccountNumber.slice(-4)}` : '—' },
+    {
+      icon: 'document-text-outline',
+      label: 'PAN number',
+      value: panNumber || (role === 'applicator' ? 'Not added — optional, but saves you tax' : 'Not added — add it to save on tax'),
+      onPress: () => {
+        setPanInput(panNumber);
+        setPanModalOpen(true);
+      },
+    },
   ];
 
   return (
@@ -150,6 +167,28 @@ export function ProfileScreen() {
           ))}
         </View>
 
+        {tier ? (
+          <Card style={styles.tierCard}>
+            <View style={styles.tierHeaderRow}>
+              <Text style={styles.tierName}>{tier.tierName} Tier</Text>
+              <Text style={styles.tierPoints}>{tier.lifetimePoints} lifetime pts</Text>
+            </View>
+            {tier.perkDescription ? <Text style={styles.tierPerk}>{tier.perkDescription}</Text> : null}
+            {tier.nextTierName ? (
+              <>
+                <View style={styles.tierBarTrack}>
+                  <View style={[styles.tierBarFill, { width: `${tierPct}%` }]} />
+                </View>
+                <Text style={styles.tierHint}>
+                  {tier.pointsToNextTier} pts to {tier.nextTierName}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.tierHint}>Top tier reached 🎉</Text>
+            )}
+          </Card>
+        ) : null}
+
         <View style={styles.idCard}>
           <View style={styles.idCardHeader}>
             <Text style={styles.idCardEyebrow}>GOMAX MEMBER CARD</Text>
@@ -181,21 +220,25 @@ export function ProfileScreen() {
         </View>
 
         <Card padded={false}>
-          {rows.map((row, i) => (
-            <View key={row.label} style={[styles.row, i < rows.length - 1 && styles.rowBorder]}>
-              <Ionicons name={row.icon} size={20} color={colors.textSecondary} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.rowLabel}>{row.label}</Text>
-                {row.pillTone ? (
-                  <View style={{ marginTop: 4 }}>
-                    <Pill label={row.value} tone={row.pillTone} size="sm" />
-                  </View>
-                ) : (
-                  <Text style={styles.rowValue}>{row.value}</Text>
-                )}
-              </View>
-            </View>
-          ))}
+          {rows.map((row, i) => {
+            const Wrapper = row.onPress ? Pressable : View;
+            return (
+              <Wrapper key={row.label} style={[styles.row, i < rows.length - 1 && styles.rowBorder]} onPress={row.onPress}>
+                <Ionicons name={row.icon} size={20} color={colors.textSecondary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rowLabel}>{row.label}</Text>
+                  {row.pillTone ? (
+                    <View style={{ marginTop: 4 }}>
+                      <Pill label={row.value} tone={row.pillTone} size="sm" />
+                    </View>
+                  ) : (
+                    <Text style={styles.rowValue}>{row.value}</Text>
+                  )}
+                </View>
+                {row.onPress ? <Ionicons name="chevron-forward" size={16} color={colors.neutral400} /> : null}
+              </Wrapper>
+            );
+          })}
         </Card>
 
         <Pressable style={styles.logout} onPress={onLogout}>
@@ -203,6 +246,35 @@ export function ProfileScreen() {
           <Text style={styles.logoutText}>Log out</Text>
         </Pressable>
       </ScrollView>
+
+      <Modal visible={panModalOpen} transparent animationType="fade" onRequestClose={() => setPanModalOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>PAN number</Text>
+            <Text style={styles.modalSubtitle}>
+              {role === 'applicator'
+                ? 'PAN dene se tax kam katega (10%, PAN ke bina 20%). Optional hai.'
+                : 'Add your PAN so 10% tax applies instead of 20% once your yearly payouts cross ₹20,000.'}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="ABCDE1234F"
+              placeholderTextColor={colors.neutral400}
+              autoCapitalize="characters"
+              value={panInput}
+              onChangeText={setPanInput}
+            />
+            <View style={styles.modalActions}>
+              <View style={{ flex: 1 }}>
+                <Button label={savingPan ? 'Saving…' : 'Save'} onPress={onSavePan} disabled={savingPan} icon={null} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Cancel" variant="secondary" onPress={() => setPanModalOpen(false)} icon={null} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -246,6 +318,14 @@ const styles = StyleSheet.create({
   },
   shortcutLabel: { ...typography.caption, fontSize: 11, color: colors.textSecondary },
   idCard: { backgroundColor: colors.navy800, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.lg },
+  tierCard: { gap: spacing.sm },
+  tierHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  tierName: { ...typography.h3, color: colors.textPrimary },
+  tierPoints: { ...typography.caption, color: colors.textSecondary },
+  tierPerk: { ...typography.caption, color: colors.textSecondary },
+  tierBarTrack: { height: 6, borderRadius: 3, backgroundColor: colors.surfaceMuted, overflow: 'hidden', marginTop: spacing.xs },
+  tierBarFill: { height: 6, borderRadius: 3, backgroundColor: colors.orange500 },
+  tierHint: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   idCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   idCardEyebrow: { ...typography.label, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.2 },
   idCardBody: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg },
@@ -265,4 +345,20 @@ const styles = StyleSheet.create({
   rowValue: { ...typography.bodyMedium, color: colors.textPrimary, marginTop: 2 },
   logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, paddingVertical: spacing.lg },
   logoutText: { ...typography.bodyMedium, color: colors.danger },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: spacing.xxl },
+  modalCard: { width: '100%', backgroundColor: colors.white, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
+  modalTitle: { ...m3Type.titleLarge, color: colors.textPrimary },
+  modalSubtitle: { ...m3Type.labelLarge, fontSize: 12, color: colors.neutral500 },
+  modalInput: {
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1.5,
+    borderColor: colors.surfaceMuted,
+    borderRadius: 8,
+    height: 44,
+    paddingHorizontal: spacing.lg,
+    ...m3Type.titleMediumSemiBold,
+    fontSize: 14,
+    color: colors.neutral950,
+  },
+  modalActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
 });
