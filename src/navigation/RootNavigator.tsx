@@ -12,6 +12,7 @@ import { AdminLoginScreen } from '../screens/admin/AdminLoginScreen';
 import { AdminTabNavigator } from './AdminTabNavigator';
 import { AdminGiftCatalogueScreen } from '../screens/admin/AdminGiftCatalogueScreen';
 import { AdminChallengesManageScreen } from '../screens/admin/AdminChallengesManageScreen';
+import { DesignSystemScreen } from '../screens/dev/DesignSystemScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -29,6 +30,7 @@ export function RootNavigator() {
       <Stack.Screen name="AdminMain" component={AdminTabNavigator} />
       <Stack.Screen name="AdminGiftCatalogue" component={AdminGiftCatalogueScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="AdminChallengesManage" component={AdminChallengesManageScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="DesignSystem" component={DesignSystemScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

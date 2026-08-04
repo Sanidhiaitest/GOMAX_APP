@@ -70,7 +70,7 @@ export function AdminApplicatorsScreen() {
                 <Text style={styles.meta}>Root of their chain</Text>
               )}
             </View>
-            <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            <View style={{ alignItems: 'flex-end', gap: spacing.xs }}>
               <Pill label={item.role} tone={ROLE_TONE[item.role] ?? 'neutral'} size="sm" />
               <Text style={styles.points}>{item.points} pts</Text>
               <Text style={styles.points}>{item.runs} runs</Text>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   statGrid: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   content: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xxxl },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2 },
   avatar: {
     width: 40,
     height: 40,

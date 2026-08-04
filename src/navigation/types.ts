@@ -37,6 +37,7 @@ export type RootStackParamList = {
   AdminMain: undefined;
   AdminGiftCatalogue: undefined;
   AdminChallengesManage: undefined;
+  DesignSystem: undefined;
 };
 
 declare global {

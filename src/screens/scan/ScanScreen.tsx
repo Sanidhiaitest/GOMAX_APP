@@ -89,7 +89,7 @@ export function ScanScreen() {
       )}
 
       <View style={[styles.headerRow, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable style={styles.iconButton}>
+        <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel="Go back">
           <Ionicons name="arrow-back" size={20} color={colors.white} />
         </Pressable>
         <View style={styles.segment}>
@@ -100,7 +100,12 @@ export function ScanScreen() {
             <Text style={[styles.segmentText, tab === 'history' && styles.segmentTextActive]}>History</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.iconButton} onPress={() => setTorchOn((v) => !v)}>
+        <Pressable
+          style={styles.iconButton}
+          onPress={() => setTorchOn((v) => !v)}
+          accessibilityRole="button"
+          accessibilityLabel={torchOn ? 'Turn off flashlight' : 'Turn on flashlight'}
+        >
           <Ionicons name={torchOn ? 'flash' : 'flash-off'} size={20} color={colors.white} />
         </Pressable>
       </View>
@@ -137,7 +142,7 @@ export function ScanScreen() {
             scanHistory.map((item) => (
               <View key={item.id} style={styles.historyRow}>
                 <View style={styles.historyIcon}>
-                  <Ionicons name="checkmark-circle" size={18} color="#14c87c" />
+                  <Ionicons name="checkmark-circle" size={18} color={colors.scanSuccessGreen} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.historyRowTitle}>+{item.points_awarded} points</Text>
@@ -167,6 +172,8 @@ export function ScanScreen() {
             style={[styles.manualSubmit, !code && styles.manualSubmitDisabled]}
             disabled={!code || scanning}
             onPress={() => submitCode(code)}
+            accessibilityRole="button"
+            accessibilityLabel="Submit code"
           >
             <Ionicons name="arrow-forward" size={20} color={colors.white} />
           </Pressable>
@@ -238,7 +245,7 @@ const styles = StyleSheet.create({
   segmentPill: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: 12 },
   segmentActive: { backgroundColor: 'rgba(192,83,54,0.18)', borderWidth: 1, borderColor: 'rgba(192,83,54,0.3)' },
   segmentText: { ...m3Type.labelLarge, fontSize: 13, color: colors.neutral300 },
-  segmentTextActive: { color: '#ff8a6b' },
+  segmentTextActive: { color: colors.scanActiveTabText },
   statusPill: {
     position: 'absolute',
     top: 110,
@@ -253,13 +260,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#14c87c' },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.scanSuccessGreen },
   statusText: { ...m3Type.labelLarge, fontSize: 13, color: colors.white },
   frameWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', marginBottom: 200 },
   frame: { width: 260, height: 260, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 16 },
   frameLoading: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   bracket: { position: 'absolute', width: 31, height: 31, borderColor: colors.primary700 },
-  caption: { ...m3Type.labelLarge, color: '#e9e9f4', textAlign: 'center', marginTop: spacing.xl, paddingHorizontal: spacing.xxxl },
+  caption: { ...m3Type.labelLarge, color: colors.scanCaptionLight, textAlign: 'center', marginTop: spacing.xl, paddingHorizontal: spacing.xxxl },
   historyWrap: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: 140, marginBottom: 200, gap: spacing.md },
   historyRow: {
     flexDirection: 'row',
