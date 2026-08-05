@@ -27,9 +27,9 @@ export function MainTabNavigator() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <BottomNav {...props} />}>
       <Tab.Screen name="Home" component={HomeRouter} />
+      <Tab.Screen name="Gifts" component={GiftCatalogueScreen} />
       <Tab.Screen name="Scan" component={ScanScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Gifts" component={GiftCatalogueScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

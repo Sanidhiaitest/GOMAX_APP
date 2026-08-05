@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../theme';
@@ -28,6 +29,9 @@ const LABELS: Record<string, string> = {
   Dcr: 'Reports',
   DealerApprovals: 'Dealers',
   LedgerSearch: 'Search',
+  // Figma (node 61:42) labels this tab "Redeem" — matches the screen's
+  // actual job (converting Points to a UPI payout) better than "Wallet" does.
+  Wallet: 'Redeem',
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {
@@ -49,9 +53,14 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
         if (isScan) {
           return (
             <Pressable key={route.key} onPress={onPress} style={styles.scanTab}>
-              <View style={styles.scanButton}>
+              <LinearGradient
+                colors={[colors.primary700, colors.scanButtonGradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.scanButton}
+              >
                 <Ionicons name={ICONS[route.name]} size={24} color={colors.white} />
-              </View>
+              </LinearGradient>
               <Text style={[styles.scanLabel, isFocused && styles.labelActive]}>Scan</Text>
             </Pressable>
           );
@@ -62,7 +71,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
             <Ionicons
               name={ICONS[route.name]}
               size={22}
-              color={isFocused ? colors.orange500 : colors.textSecondary}
+              color={isFocused ? colors.primary700 : colors.darkNeutral700}
             />
             <Text style={[styles.label, isFocused && styles.labelActive]}>{LABELS[route.name] ?? route.name}</Text>
           </Pressable>
@@ -77,23 +86,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: colors.white,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: colors.secondary50,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   tab: { flex: 1, alignItems: 'center', gap: 4 },
-  scanTab: { flex: 1, alignItems: 'center' },
+  scanTab: { flex: 1, alignItems: 'center', gap: 4 },
   scanButton: {
     width: 48,
     height: 48,
     borderRadius: radius.pill,
-    backgroundColor: colors.orange500,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -28,
-    borderWidth: 4,
+    borderWidth: 2.5,
     borderColor: colors.white,
+    shadowColor: colors.primary700,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  label: { ...typography.caption, fontSize: 11, color: colors.textSecondary },
-  scanLabel: { ...typography.caption, fontSize: 11, color: colors.textSecondary, marginTop: 2 },
-  labelActive: { color: colors.orange500 },
+  label: { ...typography.caption, fontSize: 11, color: colors.darkNeutral700 },
+  scanLabel: { ...typography.caption, fontSize: 11, color: colors.darkNeutral700 },
+  labelActive: { color: colors.primary700 },
 });

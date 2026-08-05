@@ -37,6 +37,7 @@ export const colors = {
   scanActiveTabText: '#ff8a6b', // ScanScreen active Scan/History segment label
   scanCaptionLight: '#e9e9f4', // ScanScreen caption text on the dark camera view
   warningBg: '#fff4e0', // shared warning-tinted icon/pill background (matches Pill's `warning` tone bg)
+  scanButtonGradientEnd: '#e07a62', // BottomNav Scan button's gradient end stop (Figma node 61:57)
 
   // --- Dark "Light/Neutral" collection used on Scan + Wallet ---
   darkNeutral700: '#474D6A',
