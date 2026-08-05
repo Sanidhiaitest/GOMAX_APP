@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import { Pill } from '../../components/Pill';
 import { RewardBurst, UnlockReveal } from '../../components/animations';
 import { useApp } from '../../state/AppContext';
 import { useMyRedemptions, useRedeemedThisMonth } from '../../hooks/useAppData';
+import * as profileService from '../../services/profile';
 import {
   requestRedemption,
   MIN_REDEMPTION_POINTS,
@@ -45,6 +46,12 @@ export function WalletScreen() {
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [burstTrigger, setBurstTrigger] = useState(0);
+  const [upiDraft, setUpiDraft] = useState(upiId);
+  const [savingUpi, setSavingUpi] = useState(false);
+
+  useEffect(() => {
+    setUpiDraft(upiId);
+  }, [upiId]);
 
   useEffect(() => {
     if (success) {
@@ -53,12 +60,28 @@ export function WalletScreen() {
     }
   }, [success]);
 
+  const onUpiBlur = async () => {
+    const trimmed = upiDraft.trim();
+    if (trimmed === upiId || !trimmed) return;
+    setSavingUpi(true);
+    setErrorMsg('');
+    try {
+      await profileService.updateMyProfile({ upi_id: trimmed });
+      await refreshProfile();
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Could not save UPI ID.');
+    } finally {
+      setSavingUpi(false);
+    }
+  };
+
   const remainingThisMonth = Math.max(0, MAX_REDEMPTION_POINTS_PER_MONTH - redeemedThisMonth);
   const amountRaw = selectedAmount === 'all' ? Math.min(points, MAX_REDEMPTION_POINTS_PER_REQUEST) : selectedAmount ?? 0;
   const amount = amountRaw;
   const hasPayoutMethod = upiId.length > 0;
   const canSubmit =
     hasPayoutMethod &&
+    !savingUpi &&
     amount >= MIN_REDEMPTION_POINTS &&
     amount <= MAX_REDEMPTION_POINTS_PER_REQUEST &&
     amount <= points &&
@@ -150,10 +173,19 @@ export function WalletScreen() {
             </Text>
           </View>
 
-          <Text style={styles.fieldLabel}>PAYOUT TO</Text>
+          <Text style={styles.fieldLabel}>UPI ID</Text>
           <View style={styles.upiField}>
             <Text style={styles.upiFieldEmoji}>📱</Text>
-            <Text style={styles.upiInput}>{upiId || 'Add a UPI ID / bank account in your Profile'}</Text>
+            <TextInput
+              style={styles.upiInput}
+              value={upiDraft}
+              onChangeText={setUpiDraft}
+              onEndEditing={onUpiBlur}
+              placeholder="yourname@upi"
+              placeholderTextColor="rgba(10,22,40,0.3)"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
 
           <Text style={[styles.fieldLabel, { marginTop: spacing.lg }]}>SELECT POINTS</Text>
@@ -176,7 +208,7 @@ export function WalletScreen() {
 
           <View style={{ marginTop: spacing.lg }}>
             <Button
-              label={!hasPayoutMethod ? 'Add UPI in Profile first' : submitting ? 'Submitting…' : 'Withdraw to UPI'}
+              label={savingUpi ? 'Saving UPI…' : !hasPayoutMethod ? 'Enter UPI first' : submitting ? 'Submitting…' : 'Withdraw to UPI'}
               onPress={onSubmit}
               disabled={!canSubmit}
               variant={!hasPayoutMethod ? 'neutralDisabled' : 'primary'}
@@ -269,7 +301,7 @@ const styles = StyleSheet.create({
   pointsLabel: { ...m3Type.labelSmall, fontSize: 10, letterSpacing: 1.9, color: colors.walletPointsAccent },
   runsLabel: { ...m3Type.labelSmall, fontSize: 10, letterSpacing: 1.9, color: colors.walletRunsAccent },
   cardValueRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, marginTop: spacing.md },
-  pointsValue: { fontFamily: 'Inter_700Bold', fontSize: 40, color: colors.white },
+  pointsValue: { fontFamily: 'Inter_700Bold', fontSize: 48, lineHeight: 48, color: colors.white },
   cardUnit: { ...m3Type.labelLarge, color: 'rgba(255,255,255,0.38)', marginBottom: 6 },
   cardHint: { ...m3Type.labelMedium, fontSize: 11, color: 'rgba(255,255,255,0.28)', marginTop: spacing.sm },
   cardCta: {

@@ -1,10 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../theme';
+import { PressableScale } from './animations';
 
 const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   Home: 'home-outline',
@@ -32,6 +33,9 @@ const LABELS: Record<string, string> = {
   // Figma (node 61:42) labels this tab "Redeem" — matches the screen's
   // actual job (converting Points to a UPI payout) better than "Wallet" does.
   Wallet: 'Redeem',
+  // Figma calls this nav slot "Products"; the app has no separate product
+  // catalogue post-backend-rewrite, so this is the Gift Catalogue relabeled.
+  Gifts: 'Products',
 };
 
 export function BottomNav({ state, navigation }: BottomTabBarProps) {
@@ -52,7 +56,7 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
 
         if (isScan) {
           return (
-            <Pressable key={route.key} onPress={onPress} style={styles.scanTab}>
+            <PressableScale key={route.key} onPress={onPress} style={styles.scanTab} scaleTo={0.92}>
               <LinearGradient
                 colors={[colors.primary700, colors.scanButtonGradientEnd]}
                 start={{ x: 0, y: 0 }}
@@ -62,19 +66,19 @@ export function BottomNav({ state, navigation }: BottomTabBarProps) {
                 <Ionicons name={ICONS[route.name]} size={24} color={colors.white} />
               </LinearGradient>
               <Text style={[styles.scanLabel, isFocused && styles.labelActive]}>Scan</Text>
-            </Pressable>
+            </PressableScale>
           );
         }
 
         return (
-          <Pressable key={route.key} onPress={onPress} style={styles.tab}>
+          <PressableScale key={route.key} onPress={onPress} style={styles.tab} scaleTo={0.94} haptics={false}>
             <Ionicons
               name={ICONS[route.name]}
               size={22}
               color={isFocused ? colors.primary700 : colors.darkNeutral700}
             />
             <Text style={[styles.label, isFocused && styles.labelActive]}>{LABELS[route.name] ?? route.name}</Text>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>

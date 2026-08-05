@@ -55,7 +55,7 @@ export function GiftCatalogueScreen() {
   return (
     <Screen backgroundColor={colors.surfaceMuted}>
       <View style={styles.header}>
-        <Text style={styles.title}>Gift Catalogue</Text>
+        <Text style={styles.title}>Products</Text>
         <View style={styles.runsPill}>
           <Ionicons name="trophy" size={13} color={colors.walletRunsAccent} />
           <Text style={styles.runsPillText}>{runs} Runs</Text>
