@@ -169,7 +169,7 @@ export function WalletScreen() {
               </Pressable>
             ))}
             <Pressable style={[styles.amountChip, selectedAmount === 'all' && styles.amountChipSelected]} onPress={() => setSelectedAmount('all')}>
-              <Text style={styles.amountChipText}>Max</Text>
+              <Text style={styles.amountChipText}>All</Text>
               <Text style={styles.amountChipSub}>{Math.min(points, MAX_REDEMPTION_POINTS_PER_REQUEST)}</Text>
             </Pressable>
           </View>
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.06)',
     borderRadius: 22,
     padding: spacing.xl,
-    opacity: 0.85,
+    opacity: 0.5,
   },
   pointsLabel: { ...m3Type.labelSmall, fontSize: 10, letterSpacing: 1.9, color: colors.walletPointsAccent },
   runsLabel: { ...m3Type.labelSmall, fontSize: 10, letterSpacing: 1.9, color: colors.walletRunsAccent },
