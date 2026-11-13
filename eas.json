@@ -4,7 +4,7 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_UI": "v3", "EXPO_PUBLIC_API_URL": "https://REPLACE-with-staging-api-url" }
+      "env": { "EXPO_PUBLIC_UI": "v3", "EXPO_PUBLIC_API_URL": "https://gomax-backend-1.onrender.com" }
     },
     "production": {
       "autoIncrement": true,
