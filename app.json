@@ -11,6 +11,7 @@
       "bundleIdentifier": "com.gomax.app"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.gomax.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
