@@ -104,7 +104,7 @@ export const WA_TEMPLATES: WaTemplate[] = [
     bubbles: [{
       art: d3.warning, tint: TINT.amber, title: 'Add UPI to get your cash', time: '10:42 am',
       lines: ['You have 520 points = ₹520.', 'Add your UPI ID and PAN in the app to withdraw. It takes 1 minute.'],
-      cta: { label: 'Add UPI now', to: ['PanUpiOverview'] },
+      cta: { label: 'Add UPI now', to: ['AddUpi'] },
     }],
   },
   {

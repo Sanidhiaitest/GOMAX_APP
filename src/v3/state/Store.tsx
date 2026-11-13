@@ -30,6 +30,7 @@ export type Account = {
   whatsappUpdates?: boolean;
   pan?: { masked: string; name: string };
   upi?: { id: string; name: string };
+  unreadNotifications: number;
   appOpens: number;
   firstTimeDone: boolean;
   /** Pager index while the 3 first-time hero cards are showing. */
@@ -49,6 +50,7 @@ const EMPTY_ACCOUNT: Account = {
   todayCoupons: 0,
   spinsLeft: 0,
   streakDay: 0,
+  unreadNotifications: 0,
   appOpens: 1,
   firstTimeDone: false,
   firstTimeCard: 0,
@@ -76,7 +78,7 @@ export const DEMO_PRESETS: Record<string, { label: string; account: Partial<Acco
     account: { points: 0, runs: 0, lifetimePoints: 0, appOpens: 1, firstTimeDone: false, firstTimeCard: 0, firstCouponCelebrated: false, pan: undefined, upi: undefined, streakDay: 0, scratchCardsReady: 0 },
   },
   default: { label: 'A2-05 · default', account: { ...SAMPLE_ACCOUNT, appOpens: 1 } },
-  kyc: { label: 'A2-06 / A3-01 · PAN & UPI pending', account: { ...SAMPLE_ACCOUNT, appOpens: 2, pan: undefined, upi: undefined } },
+  kyc: { label: 'A2-06 / A3-01 · UPI pending', account: { ...SAMPLE_ACCOUNT, appOpens: 2, pan: undefined, upi: undefined } },
   withdraw: {
     label: 'A2-07 · withdraw ready',
     account: {
@@ -86,7 +88,6 @@ export const DEMO_PRESETS: Record<string, { label: string; account: Partial<Acco
       lifetimePoints: 1240,
       todayCoupons: 10,
       scratchCardsReady: 1,
-      pan: { masked: 'ABCDE••••F', name: 'RAM KUMAR' },
       upi: { id: 'ram@ybl', name: 'RAM KUMAR' },
     },
   },

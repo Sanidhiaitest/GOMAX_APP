@@ -35,8 +35,6 @@ export type V3StackParamList = {
   RankSheet: undefined;
   HowItWorksSheet: undefined;
   FirstCoupon: { value: number; bonus: number } | undefined;
-  PanUpiOverview: undefined;
-  AddPan: undefined;
   AddUpi: undefined;
   PanUpiDone: undefined;
   DemoStates: undefined;

@@ -46,7 +46,7 @@ export function HomeScreen() {
   );
 
   const firstTime = !account.firstTimeDone;
-  const kycDone = !!account.pan && !!account.upi;
+  const kycDone = !!account.upi;
   const withdrawReady = account.points >= WITHDRAW_MIN && !!account.upi;
   const showKyc = !firstTime && !kycDone && account.appOpens >= 2;
 
@@ -67,7 +67,7 @@ export function HomeScreen() {
     streak: () => nav.navigate('PhotoStreak'),
     invite: () => nav.navigate('InviteEarn'),
     how: () => nav.navigate('HowItWorksSheet'),
-    kyc: () => nav.navigate('PanUpiOverview'),
+    kyc: () => nav.navigate('AddUpi'),
   };
 
   const [page, setPage] = useState(account.firstTimeCard);
@@ -133,7 +133,7 @@ export function HomeScreen() {
         />
         <HomeHeader
           name={name}
-          unread
+          unread={account.unreadNotifications > 0}
           onAvatar={go.profile}
           onBell={go.notifications}
           onAvatarLongPress={() => nav.navigate('DemoStates')}

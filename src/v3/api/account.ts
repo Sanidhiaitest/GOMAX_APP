@@ -1,6 +1,7 @@
 // GET /me + GET /home → the Store's user and account. PATCH /me for settings.
 import { api } from './client';
 import type { Account, User } from '../state/Store';
+import { registerFcmToken } from './notifications';
 
 type Me = { name: string; mobile: string; inviteCode: string; city: string | null; language: 'hi' | 'en' | 'pa'; whatsappOptIn: boolean };
 
@@ -13,6 +14,7 @@ type Home = {
   streak: { completed: number; doneToday: boolean };
   scratchCardsReady: number;
   kyc: { pan: { masked: string; name: string } | null; upi: { id: string; name: string } | null };
+  unreadNotifications: number;
   withdraw: { minPoints: number };
   firstCouponDone: boolean;
   activeChallenge: { title: string; progress: number; goal: number; rewardRuns: number } | null;
@@ -35,6 +37,7 @@ export async function fetchAccount() {
     whatsappUpdates: me.whatsappOptIn,
     pan: home.kyc.pan ?? undefined,
     upi: home.kyc.upi ? { id: home.kyc.upi.id, name: home.kyc.upi.name } : undefined,
+    unreadNotifications: home.unreadNotifications,
     firstCouponCelebrated: home.firstCouponDone,
     activeChallenge: home.activeChallenge
       ? {
@@ -46,8 +49,21 @@ export async function fetchAccount() {
       : undefined,
     scratchCardsReady: home.scratchCardsReady,
   };
+  // Register FCM token with backend (fire-and-forget) so server can send push notifications.
+  getFcmToken()
+    .then((token) => { if (token) registerFcmToken(token).catch(() => undefined); })
+    .catch(() => undefined);
   return { user, account, withdrawMin: home.withdraw.minPoints, firstCouponDone: home.firstCouponDone };
 }
 
 export const saveSettings = (p: { language?: 'hi' | 'en' | 'pa'; whatsappOptIn?: boolean }) =>
   api<{ ok: true }>('/me', { method: 'PATCH', body: p });
+
+async function getFcmToken(): Promise<string | null> {
+  try {
+    const messaging = (await import('@react-native-firebase/messaging')).default;
+    return await messaging().getToken();
+  } catch {
+    return null;
+  }
+}

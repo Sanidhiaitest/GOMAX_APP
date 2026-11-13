@@ -17,3 +17,7 @@ export const listNotifications = () =>
   read(async () => (await api<{ rows: ServerNote[] }>('/notifications', { query: { limit: 100 } })).rows, [] as ServerNote[]);
 
 export const markRead = (id: string) => read(() => api('/notifications/read', { method: 'POST', body: { ids: [id] } }), null);
+
+/** Registers (or refreshes) the FCM device token so the backend can send push notifications. */
+export const registerFcmToken = (token: string) =>
+  api<{ ok: true }>('/me/device-token', { method: 'POST', body: { token } });

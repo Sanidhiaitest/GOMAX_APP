@@ -24,11 +24,9 @@ import { WelcomeScreen } from '../screens/home/WelcomeScreen';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { HowItWorksSheet, RankSheet } from '../screens/home/HomeSheets';
 import {
-  AddPanScreen,
   AddUpiScreen,
   FirstCouponScreen,
   PanUpiDoneScreen,
-  PanUpiOverviewScreen,
 } from '../screens/home/KycScreens';
 import { DemoStatesScreen } from '../screens/dev/DemoStatesScreen';
 import { SCREENS } from './registry';
@@ -81,8 +79,6 @@ export function V3Navigator() {
       <Stack.Screen name="RankSheet" component={RankSheet} options={sheet} />
       <Stack.Screen name="HowItWorksSheet" component={HowItWorksSheet} options={sheet} />
       <Stack.Screen name="FirstCoupon" component={FirstCouponScreen} options={{ animation: 'fade' }} />
-      <Stack.Screen name="PanUpiOverview" component={PanUpiOverviewScreen} />
-      <Stack.Screen name="AddPan" component={AddPanScreen} />
       <Stack.Screen name="AddUpi" component={AddUpiScreen} />
       <Stack.Screen name="PanUpiDone" component={PanUpiDoneScreen} options={{ animation: 'fade' }} />
       <Stack.Screen name="DemoStates" component={DemoStatesScreen} />

@@ -41,7 +41,7 @@ export function ForgotMobileScreen({ navigation, route }: V3ScreenProps<'ForgotM
     // Send Firebase SMS OTP to prove ownership of the number.
     try {
       const confirmation = await auth().signInWithPhoneNumber('+91' + digits(mobile));
-      navigation.navigate('ForgotOtp', { mobile: digits(mobile), verificationId: confirmation.verificationId });
+      navigation.navigate('ForgotOtp', { mobile: digits(mobile), verificationId: confirmation.verificationId ?? '' });
     } catch (e) {
       toast(errorText(e), 'error');
     }

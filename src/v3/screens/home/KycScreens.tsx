@@ -1,184 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { errorText } from '../../api/client';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
-import { ChevronRight, Coins, IdCard, LucideIcon, ScanLine, ShieldCheck, Smartphone } from 'lucide-react-native';
-import { c, t, HELPLINE } from '../../theme';
+import { Coins, ScanLine, Smartphone } from 'lucide-react-native';
+import { c, t } from '../../theme';
 import { d3 } from '../../assets';
 import { Page, CenterBar } from '../../components/Layout';
 import { Button } from '../../components/Button';
 import { useToast } from '../../components/Toast';
 import { FormField, OkNote } from '../../components/FormField';
-import { FieldError } from '../../components/Field';
-import { saveUpi, validateUpi, verifyPan } from '../../api/kyc';
+import { saveUpi, validateUpi } from '../../api/kyc';
 import { WITHDRAW_MIN, fmt, useV3 } from '../../state/Store';
 import { V3ScreenProps } from '../../navigation/types';
 
-// A3-05 Link PAN & UPI · overview (17:17520)
-export function PanUpiOverviewScreen({ navigation }: V3ScreenProps<'PanUpiOverview'>) {
-  const { account } = useV3();
-  return (
-    <Page
-      bg={c.surfacePage}
-      footerBordered
-      footer={
-        <Button
-          label={account.pan ? 'Add UPI' : 'Start with PAN'}
-          onPress={() => navigation.navigate(account.pan ? 'AddUpi' : 'AddPan')}
-        />
-      }
-    >
-      <CenterBar title="Link PAN & UPI" />
-      <View style={{ gap: 14, paddingTop: 8 }}>
-        <Text style={[t.body15, { color: c.textSecondary }]}>2 quick steps so your money can reach you. Do it once.</Text>
-        <StepCard
-          icon={IdCard}
-          title="1. PAN card"
-          sub={account.pan ? `${account.pan.masked} · ${account.pan.name}` : 'Needed by law for cash rewards'}
-          cta="Add PAN"
-          done={!!account.pan}
-          onPress={() => navigation.navigate('AddPan')}
-        />
-        <StepCard
-          icon={Smartphone}
-          title="2. UPI ID"
-          sub={account.upi ? account.upi.id : 'Money goes here, e.g. ram@ybl'}
-          cta="Add UPI"
-          done={!!account.upi}
-          onPress={() => navigation.navigate('AddUpi')}
-        />
-        <View style={styles.safe}>
-          <ShieldCheck size={18} color={c.success} strokeWidth={2} />
-          <Text style={[t.cap12, { color: c.textSecondary }]}>Your details are safe. Only used for payouts.</Text>
-        </View>
-      </View>
-    </Page>
-  );
-}
-
-function StepCard({
-  icon: Icon,
-  title,
-  sub,
-  cta,
-  done,
-  onPress,
-}: {
-  icon: LucideIcon;
-  title: string;
-  sub: string;
-  cta: string;
-  done?: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={styles.stepCard}>
-      <View style={styles.stepIcon}>
-        <Icon size={22} color={c.primary700} strokeWidth={1.75} />
-      </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[t.body15Semibold, { color: c.textPrimary }]}>{title}</Text>
-        <Text style={[t.cap12, { color: c.textSecondary }]}>{sub}</Text>
-      </View>
-      <View style={[styles.pill, { backgroundColor: done ? c.success50 : c.primary100 }]}>
-        {done ? null : <ChevronRight size={14} color={c.primary700} strokeWidth={2} />}
-        <Text style={[t.cap12Medium, { color: done ? c.successText : c.primary700 }]}>{done ? 'Done ✓' : cta}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
-function KycDots({ step }: { step: 1 | 2 }) {
-  return (
-    <View style={styles.dots}>
-      <View style={[styles.dot, { backgroundColor: c.navy900 }, step === 1 && { width: 20 }]} />
-      <View style={[styles.dot, { backgroundColor: step === 2 ? c.navy900 : c.borderStrong }, step === 2 && { width: 20 }]} />
-      <Text style={[t.sec13, { color: c.textSecondary }]}>{step === 1 ? 'Step 1 of 2 · PAN' : 'Step 2 of 2 · UPI'}</Text>
-    </View>
-  );
-}
-
-// A3-06 Link PAN & UPI · add PAN (17:17556)
-export function AddPanScreen({ navigation }: V3ScreenProps<'AddPan'>) {
-  const { user, patchAccount } = useV3();
-  const [pan, setPan] = useState('');
-  const [name, setName] = useState((user?.name ?? '').toUpperCase());
-  const [checked, setChecked] = useState<string | null>(null);
-  const [masked, setMasked] = useState('');
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setChecked(null);
-    setError(undefined);
-    if (pan.length !== 10 || name.trim().length < 3) return;
-    let live = true;
-    // Each check goes to the government lookup, so wait for typing to stop.
-    const id = setTimeout(() => {
-      verifyPan(pan, name).then((r) => {
-        if (!live) return;
-        if (r.ok) {
-          setChecked(r.name);
-          setMasked(r.masked);
-        } else setError(r.error);
-      });
-    }, 700);
-    return () => {
-      live = false;
-      clearTimeout(id);
-    };
-  }, [pan, name]);
-
-  const next = () => {
-    setBusy(true);
-    patchAccount({ pan: { masked, name: checked! } });
-    setBusy(false);
-    navigation.replace('AddUpi');
-  };
-
-  return (
-    <Page bg={c.surfacePage} footerBordered footer={<Button label="Next: add UPI" arrow disabled={!checked} loading={busy} onPress={next} />}>
-      <CenterBar title="Add PAN" />
-      <View style={{ gap: 14, paddingTop: 8 }}>
-        <KycDots step={1} />
-        <FormField
-          label="PAN number"
-          required
-          icon={IdCard}
-          placeholder="ABCDE1234F"
-          autoCapitalize="characters"
-          autoFocus
-          maxLength={10}
-          value={pan}
-          onChangeText={(v) => setPan(v.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-          helper="10 letters & numbers, as on your PAN card"
-          error={error}
-        />
-        <FormField label="Name as on PAN" required placeholder="Full name" autoCapitalize="characters" value={name} onChangeText={setName} />
-        {checked ? <OkNote text={`PAN checked · ${checked}`} /> : null}
-      </View>
-    </Page>
-  );
-}
-
-// A3-07 Link PAN & UPI · add UPI (17:17589)
+// A3-07 Add UPI (17:17589)
 export function AddUpiScreen({ navigation }: V3ScreenProps<'AddUpi'>) {
-  const { account, patchAccount } = useV3();
+  const { patchAccount } = useV3();
   const toast = useToast();
   const [upi, setUpi] = useState('');
-  const [result, setResult] = useState<{ name: string; matches: boolean } | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setResult(null);
+    setName(null);
     setError(undefined);
     if (!upi.includes('@') || upi.split('@')[1].length < 2) return;
     let live = true;
     const id = setTimeout(() => {
       validateUpi(upi).then((r) => {
         if (!live) return;
-        if (r.ok) setResult({ name: r.name, matches: r.matches });
+        if (r.ok) setName(r.name);
         else setError(r.error);
       });
     }, 400);
@@ -186,7 +38,7 @@ export function AddUpiScreen({ navigation }: V3ScreenProps<'AddUpi'>) {
       live = false;
       clearTimeout(id);
     };
-  }, [upi, account.pan?.name]);
+  }, [upi]);
 
   const save = async () => {
     setBusy(true);
@@ -203,10 +55,9 @@ export function AddUpiScreen({ navigation }: V3ScreenProps<'AddUpi'>) {
   };
 
   return (
-    <Page bg={c.surfacePage} footerBordered footer={<Button label="Save UPI" disabled={!result?.matches} loading={busy} onPress={save} />}>
+    <Page bg={c.surfacePage} footerBordered footer={<Button label="Save UPI" disabled={!name} loading={busy} onPress={save} />}>
       <CenterBar title="Add UPI" />
       <View style={{ gap: 14, paddingTop: 8 }}>
-        <KycDots step={2} />
         <FormField
           label="UPI ID"
           required
@@ -219,13 +70,7 @@ export function AddUpiScreen({ navigation }: V3ScreenProps<'AddUpi'>) {
           onChangeText={setUpi}
           error={error}
         />
-        {result ? (
-          result.matches ? (
-            <OkNote text={`Name on UPI: ${result.name} (matches PAN)`} />
-          ) : (
-            <FieldError text={`Name on UPI doesn't match PAN. Call helpline ${HELPLINE}`} />
-          )
-        ) : null}
+        {name ? <OkNote text={`Verified · ${name}`} /> : null}
         <Text style={[t.cap12, { color: c.textSecondary }]}>Find your UPI ID in PhonePe, Google Pay or Paytm → Profile.</Text>
       </View>
     </Page>
@@ -242,7 +87,7 @@ export function PanUpiDoneScreen({ navigation }: V3ScreenProps<'PanUpiDone'>) {
         <View style={{ height: 200, justifyContent: 'center' }}>
           <Animated.Image entering={ZoomIn.springify().damping(10)} source={d3.checkMarkButton} style={{ width: 120, height: 120 }} />
         </View>
-        <Text style={styles.big}>PAN & UPI linked</Text>
+        <Text style={styles.big}>UPI linked</Text>
         <Text style={[t.body15, { color: c.textSecondary, textAlign: 'center' }]}>
           {short > 0 ? 'You can take money out once you have 500 points.' : 'You can take your money out now.'}
         </Text>
@@ -318,21 +163,7 @@ export function FirstCouponScreen({ navigation, route }: V3ScreenProps<'FirstCou
 }
 
 const styles = StyleSheet.create({
-  stepCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.surfaceCard,
-  },
-  stepIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: c.primary50, alignItems: 'center', justifyContent: 'center' },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'center' },
-  safe: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dots: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
   big: { fontFamily: 'Inter_700Bold', fontSize: 26, lineHeight: 28, letterSpacing: -0.26, color: c.navyBrand, textAlign: 'center' },
   abs: { position: 'absolute' },
   orb: { position: 'absolute', right: -120, top: -124, width: 300, height: 300, borderRadius: 150, backgroundColor: c.primary100, opacity: 0.6 },

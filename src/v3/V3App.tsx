@@ -7,6 +7,7 @@ import { ToastProvider, useToast } from './components/Toast';
 import { bindApiEvents } from './api/client';
 import { V3Navigator } from './navigation/V3Navigator';
 import { V3StackParamList } from './navigation/types';
+import { usePushSetup } from './lib/usePushSetup';
 import { c } from './theme';
 
 const navRef = createNavigationContainerRef<V3StackParamList>();
@@ -18,6 +19,20 @@ function E2EBridge() {
   if (process.env.EXPO_PUBLIC_E2E === '1' && typeof window !== 'undefined') {
     (window as unknown as Record<string, unknown>).__v3 = { nav: navRef, store };
   }
+  return null;
+}
+
+// Sets up FCM push notifications: permission request, foreground handler, tap navigation.
+function PushSetup() {
+  const { refreshAccount } = useV3();
+  const toast = useToast();
+  usePushSetup({
+    navigate: (route, params) => {
+      if (navRef.isReady()) (navRef.current?.navigate as (r: string, p?: object) => void)(route, params);
+    },
+    onNewNotification: refreshAccount,
+    showToast: (msg, kind) => toast(msg, kind ?? 'info'),
+  });
   return null;
 }
 
@@ -49,6 +64,7 @@ export function V3App() {
       <E2EBridge />
       <ToastProvider>
         <ApiEvents />
+        <PushSetup />
         <NavigationContainer ref={navRef}>
           <V3Navigator />
         </NavigationContainer>

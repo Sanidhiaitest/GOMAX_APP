@@ -114,12 +114,12 @@ function PointsCard() {
           </Pressable>
         </View>
       ) : (
-        <Pressable style={styles.upiRow} onPress={() => nav.navigate('PanUpiOverview')}>
+        <Pressable style={styles.upiRow} onPress={() => nav.navigate('AddUpi')}>
           <Info size={18} color="#fff" strokeWidth={2} />
-          <Text style={[t.sec13Semibold, { color: '#fff', flex: 1 }]}>Link PAN & UPI to withdraw</Text>
+          <Text style={[t.sec13Semibold, { color: '#fff', flex: 1 }]}>Link UPI to withdraw</Text>
         </Pressable>
       )}
-      <Pressable style={styles.whiteBtn} onPress={() => nav.navigate(account.upi ? 'Withdraw' : 'PanUpiOverview')}>
+      <Pressable style={styles.whiteBtn} onPress={() => nav.navigate(account.upi ? 'Withdraw' : 'AddUpi')}>
         <Text style={[t.button15, { color: c.successText }]}>Withdraw ₹{fmt(account.points)}</Text>
       </Pressable>
     </LinearGradient>

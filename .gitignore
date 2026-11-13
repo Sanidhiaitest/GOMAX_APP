@@ -35,8 +35,7 @@ yarn-error.*
 .env
 .env*.local
 
-# Firebase — contains API keys, never commit
-google-services.json
+# iOS Firebase config (has private key, never commit)
 GoogleService-Info.plist
 
 # typescript

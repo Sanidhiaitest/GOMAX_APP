@@ -1,6 +1,11 @@
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
+import messaging from '@react-native-firebase/messaging';
+
+// Must be called outside any React component — required for Android background push.
+// The system shows the notification automatically; nothing else needed here.
+messaging().setBackgroundMessageHandler(async () => undefined);
 
 import App from './App';
 

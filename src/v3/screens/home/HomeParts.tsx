@@ -11,7 +11,6 @@ import {
   Clock,
   Gift,
   History,
-  IdCard,
   IndianRupee,
   Lock,
   LucideIcon,
@@ -504,21 +503,17 @@ export function LinkPanUpiCard({ onPress }: { onPress: () => void }) {
       <View style={styles.kycTop}>
         <Image source={d3.locked} style={{ width: 36, height: 36 }} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={[t.section15, { color: c.textPrimary }]}>Link PAN & UPI</Text>
+          <Text style={[t.section15, { color: c.textPrimary }]}>Link UPI</Text>
           <Text style={[t.cap12, { color: c.textSecondary }]}>Needed to take your money out</Text>
         </View>
         <ChevronRight size={20} color={c.textSecondary} strokeWidth={2} />
       </View>
       <View style={styles.kycSteps}>
         <View style={styles.whitePill}>
-          <IdCard size={14} color={c.textSecondary} strokeWidth={2} />
-          <Text style={[t.cap12Medium, { color: c.textSecondary }]}>1 PAN</Text>
-        </View>
-        <View style={styles.whitePill}>
           <Smartphone size={14} color={c.textSecondary} strokeWidth={2} />
-          <Text style={[t.cap12Medium, { color: c.textSecondary }]}>2 UPI</Text>
+          <Text style={[t.cap12Medium, { color: c.textSecondary }]}>UPI ID</Text>
         </View>
-        <Text style={[t.cap12, { color: c.textSecondary }]}>· 2 min</Text>
+        <Text style={[t.cap12, { color: c.textSecondary }]}>· 1 min</Text>
       </View>
     </Pressable>
   );

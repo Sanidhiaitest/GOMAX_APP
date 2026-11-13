@@ -23,7 +23,6 @@ import {
   CircleHelp,
   ExternalLink,
   History,
-  IdCard,
   IndianRupee,
   Languages,
   LogOut,
@@ -127,30 +126,17 @@ export function ProfileScreen() {
         </View>
 
         <View style={{ paddingHorizontal: 16, paddingTop: 18, gap: 12 }}>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <Pressable style={styles.kyc} onPress={() => nav.navigate(account.pan ? 'PanUpiOverview' : 'AddPan')}>
-              <View style={styles.kycHead}>
-                <IdCard size={16} color={c.textPrimary} strokeWidth={1.75} />
-                <Text style={[t.body15Semibold, { color: c.textPrimary }]}>PAN</Text>
-              </View>
-              {account.pan ? (
-                <Pill icon={CircleCheck} label="Verified" bg={c.success50} ink={c.successText} />
-              ) : (
-                <Pill icon={CircleAlert} label="Add PAN" bg={c.warning50} ink={c.warningText} />
-              )}
-            </Pressable>
-            <Pressable style={styles.kyc} onPress={() => nav.navigate(account.upi ? 'PanUpiOverview' : 'AddUpi')}>
-              <View style={styles.kycHead}>
-                <IndianRupee size={16} color={c.textPrimary} strokeWidth={1.75} />
-                <Text style={[t.body15Semibold, { color: c.textPrimary }]}>UPI</Text>
-              </View>
-              {account.upi ? (
-                <Pill icon={CircleCheck} label={`${account.upi.id} · Verified`} bg={c.success50} ink={c.successText} />
-              ) : (
-                <Pill icon={CircleAlert} label="Add UPI" bg={c.warning50} ink={c.warningText} />
-              )}
-            </Pressable>
-          </View>
+          <Pressable style={[styles.kyc, { flex: 1 }]} onPress={() => nav.navigate('AddUpi')}>
+            <View style={styles.kycHead}>
+              <IndianRupee size={16} color={c.textPrimary} strokeWidth={1.75} />
+              <Text style={[t.body15Semibold, { color: c.textPrimary }]}>UPI</Text>
+            </View>
+            {account.upi ? (
+              <Pill icon={CircleCheck} label={`${account.upi.id} · Verified`} bg={c.success50} ink={c.successText} />
+            ) : (
+              <Pill icon={CircleAlert} label="Add UPI" bg={c.warning50} ink={c.warningText} />
+            )}
+          </Pressable>
 
           <View style={styles.card}>
             <View style={styles.kycHead}>
@@ -173,7 +159,7 @@ export function ProfileScreen() {
             <Row icon={Users} title="Joined with your code" sub={`${fmt(refs?.count ?? 0)} people · ${fmt(refs?.runsEarned ?? 0)} runs`} onPress={() => nav.navigate('InviteEarn')} />
             <Row icon={UserPlus} title="Invite & earn" sub={`Code ${code}`} onPress={() => nav.navigate('InviteEarn')} />
             <Row icon={History} title="My scans" sub="All coupons you scanned" onPress={() => nav.navigate('MyScans')} />
-            <Row icon={Pencil} title="Edit details" sub="Name, city, birthday" onPress={() => nav.navigate('PanUpiOverview')} last />
+            <Row icon={Pencil} title="Edit details" sub="Name, city, birthday" last />
           </View>
 
           <View style={styles.group}>

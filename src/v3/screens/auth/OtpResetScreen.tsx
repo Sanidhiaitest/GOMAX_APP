@@ -41,7 +41,7 @@ export function OtpResetScreen({ navigation, route }: V3ScreenProps<'ForgotOtp'>
   const resend = async () => {
     try {
       const confirmation = await auth().signInWithPhoneNumber('+91' + mobile);
-      setCurrentVerificationId(confirmation.verificationId);
+      setCurrentVerificationId(confirmation.verificationId ?? '');
       setOtp('');
       setResendLeft(RESEND_SECONDS);
       toast('New code sent', 'success');
