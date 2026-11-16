@@ -4,6 +4,7 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
+      "node": "20.18.0",
       "env": { "EXPO_PUBLIC_UI": "v3", "EXPO_PUBLIC_API_URL": "https://gomax-backend-1.onrender.com" }
     },
     "production": {
