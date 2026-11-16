@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Gift, House, LucideIcon, Package, QrCode, User } from 'lucide-react-native';
-import { PressableScale } from '../../components/animations';
+import { PressableScale } from './animations';
 import { c, t, shadow } from '../theme';
 
 const TABS: Record<string, { icon: LucideIcon; label: string }> = {

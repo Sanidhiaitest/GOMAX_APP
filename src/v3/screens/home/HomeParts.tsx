@@ -26,7 +26,7 @@ import { d3, img } from '../../assets';
 import { RANKS, RANK_ORDER, RankId, nextRank, rankFor } from '../../data/ranks';
 import { Account, WITHDRAW_MIN, fmt, initials } from '../../state/Store';
 import { MiniWheel, SpinWheel } from '../../components/SpinWheel';
-import { PressableScale } from '../../../components/animations';
+import { PressableScale } from '../../components/animations';
 
 // ---------- header (avatar · greeting · bell) ----------
 

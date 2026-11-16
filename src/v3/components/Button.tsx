@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { ArrowRight, LucideIcon } from 'lucide-react-native';
-import { PressableScale } from '../../components/animations';
+import { PressableScale } from './animations';
 import { c, t } from '../theme';
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'plain' | 'navy' | 'whatsapp' | 'dangerOutline' | 'primaryOutline';
